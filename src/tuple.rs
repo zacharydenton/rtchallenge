@@ -1,12 +1,12 @@
 use std::ops;
 
 /// A tuple is just an ordered list of things, like numbers.
-#[derive(Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Tuple {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }
 
 /// Constructs a Tuple.
@@ -26,22 +26,22 @@ pub fn vector(x: f32, y: f32, z: f32) -> Tuple {
 
 impl Tuple {
     /// Whether the Tuple is a point (w = 1.0).
-    fn is_point(&self) -> bool {
+    pub fn is_point(&self) -> bool {
         self.w == 1.0
     }
 
     /// Whether the Tuple is a vector (w = 0.0).
-    fn is_vector(&self) -> bool {
+    pub fn is_vector(&self) -> bool {
         self.w == 0.0
     }
 
     /// The distance represented by the tuple.
-    fn magnitude(&self) -> f32 {
+    pub fn magnitude(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
 
     /// Returns a normalized (magnitude = 1.0) form of the tuple.
-    fn normalize(&self) -> Tuple {
+    pub fn normalize(&self) -> Tuple {
         let m = self.magnitude();
         Tuple {
             x: self.x / m,
@@ -60,7 +60,7 @@ impl Tuple {
     ///
     /// If the two vectors are unit vectors, the dot product is the cosine of
     /// the angle between them.
-    fn dot(&self, other: &Tuple) -> f32 {
+    pub fn dot(&self, other: &Tuple) -> f32 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
@@ -70,15 +70,16 @@ impl Tuple {
     /// Returns the cross product (aka vector product) with another vector.
     ///
     /// This is a new vector that is perpendicular to both of the original vectors.
-    fn cross(&self, other: &Tuple) -> Tuple {
+    pub fn cross(&self, other: &Tuple) -> Tuple {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
-        vector(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
-        )
+        Tuple {
+            x: self.y * other.z - self.z * other.y,
+            y: self.z * other.x - self.x * other.z,
+            z: self.x * other.y - self.y * other.x,
+            w: 0.,
+        }
     }
 }
 

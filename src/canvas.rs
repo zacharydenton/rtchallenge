@@ -3,7 +3,7 @@ use crate::color::*;
 pub struct Canvas {
     pub width: usize,
     pub height: usize,
-    data: Vec<u8>,
+    pub data: Vec<u8>,
 }
 
 /// Constructs a Canvas of the given width and height.
@@ -19,7 +19,7 @@ pub fn canvas(width: usize, height: usize) -> Canvas {
 
 impl Canvas {
     pub fn get_color(&self, x: usize, y: usize) -> Color {
-        let i = self.width * y + x;
+        let i = 3 * (self.width * y + x);
         let r = self.data[i + 0] as f32 / 255.0;
         let g = self.data[i + 1] as f32 / 255.0;
         let b = self.data[i + 2] as f32 / 255.0;
@@ -28,10 +28,10 @@ impl Canvas {
     }
 
     pub fn set_color(&mut self, x: usize, y: usize, color: &Color) {
-        let r = (color.r * 255.0).round() as u8;
-        let g = (color.g * 255.0).round() as u8;
-        let b = (color.b * 255.0).round() as u8;
-        let i = self.width * y + x;
+        let r = (color.r.max(0.0).min(1.0) * 255.0).round() as u8;
+        let g = (color.g.max(0.0).min(1.0) * 255.0).round() as u8;
+        let b = (color.b.max(0.0).min(1.0) * 255.0).round() as u8;
+        let i = 3 * (self.width * y + x);
 
         self.data[i + 0] = r;
         self.data[i + 1] = g;

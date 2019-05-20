@@ -1,15 +1,15 @@
 use crate::canvas::*;
 
 pub fn canvas_to_ppm(canvas: Canvas) -> String {
-    let header = format!(
+    let mut result = String::new();
+    result.push_str(&format!(
         "P3
 {} {}
 255
 ",
         canvas.width, canvas.height
-    );
+    ));
 
-    let mut data = String::new();
     for y in 0..canvas.height {
         let row: Vec<_> = canvas.data[3 * (y * canvas.width)..3 * ((y + 1) * canvas.width)]
             .iter()
@@ -21,24 +21,24 @@ pub fn canvas_to_ppm(canvas: Canvas) -> String {
         for c in row {
             let len = 1 + c.len();
             if len + chars_written > 70 {
-                data.push_str("\n");
+                result.push_str("\n");
                 chars_written = 0;
             }
 
             if chars_written == 0 {
-                data.push_str(&c);
+                result.push_str(&c);
                 chars_written += len - 1;
             } else {
-                data.push_str(" ");
-                data.push_str(&c);
+                result.push_str(" ");
+                result.push_str(&c);
                 chars_written += len;
             }
         }
 
-        data.push_str("\n");
+        result.push_str("\n");
     }
 
-    header + &data
+    result
 }
 
 #[cfg(test)]

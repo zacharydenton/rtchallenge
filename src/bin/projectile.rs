@@ -1,4 +1,7 @@
 extern crate rtchallenge;
+use rtchallenge::canvas::*;
+use rtchallenge::color::*;
+use rtchallenge::ppm::*;
 use rtchallenge::tuple::*;
 
 struct Projectile {
@@ -21,28 +24,21 @@ fn tick(environment: &Environment, projectile: &Projectile) -> Projectile {
 fn main() {
     let mut projectile = Projectile {
         position: point(0., 1., 0.),
-        velocity: vector(1., 1., 0.).normalize(),
+        velocity: vector(1., 1.8, 0.).normalize() * 11.25,
     };
     let environment = Environment {
         gravity: vector(0., -0.1, 0.),
         wind: vector(-0.01, 0., 0.0),
     };
+    let mut canvas = canvas(900, 550);
+    let color = color(0.8, 0.3, 0.2);
 
-    println!(
-        "Launching a projectile from {:?} with velocity {:?}.",
-        projectile.position, projectile.velocity
-    );
-    println!(
-        "The current gravity is {:?} and the windspeed is {:?}.",
-        environment.gravity, environment.wind
-    );
-
-    let mut ticks = 0;
     while projectile.position.y > 0. {
-        println!("Projectile position: {:?}", projectile.position);
+        let x = projectile.position.x.round() as usize;
+        let y = canvas.height - (projectile.position.y.round() as usize);
+        canvas.set_color(x, y, &color);
         projectile = tick(&environment, &projectile);
-        ticks += 1;
     }
 
-    println!("The projectile crashed after {} ticks.", ticks);
+    print!("{}", canvas_to_ppm(canvas));
 }

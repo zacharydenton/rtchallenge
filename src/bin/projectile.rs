@@ -5,13 +5,13 @@ use rtchallenge::ppm::*;
 use rtchallenge::tuple::*;
 
 struct Projectile {
-    position: Tuple,
-    velocity: Tuple,
+    position: Tuple4,
+    velocity: Tuple4,
 }
 
 struct Environment {
-    gravity: Tuple,
-    wind: Tuple,
+    gravity: Tuple4,
+    wind: Tuple4,
 }
 
 fn tick(environment: &Environment, projectile: &Projectile) -> Projectile {
@@ -23,12 +23,12 @@ fn tick(environment: &Environment, projectile: &Projectile) -> Projectile {
 
 fn main() {
     let mut projectile = Projectile {
-        position: point(0., 1., 0.),
-        velocity: vector(1., 1.8, 0.).normalize() * 11.25,
+        position: point3(0., 1., 0.),
+        velocity: vector3(1., 1.8, 0.).normalize() * 11.25,
     };
     let environment = Environment {
-        gravity: vector(0., -0.1, 0.),
-        wind: vector(-0.01, 0., 0.0),
+        gravity: vector3(0., -0.1, 0.),
+        wind: vector3(-0.01, 0., 0.0),
     };
     let mut canvas = canvas(900, 550);
     let color = color(0.8, 0.3, 0.2);

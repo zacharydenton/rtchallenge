@@ -12,7 +12,7 @@ fn main() {
     let color = color(1.0, 0.0, 0.0);
     let origin = point3(0.0, 0.0, -1.0);
     let mut sphere = sphere();
-    sphere.transform = scale(0.5, 0.5, 0.5);
+    sphere.transform = rotate_z(0.25) * shear(1., 0., 0., 0., 0., 0.) * scale(0.5, 0.5, 0.5);
 
     for y in 0..canvas.height {
         for x in 0..canvas.width {

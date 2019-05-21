@@ -67,6 +67,20 @@ impl Object {
             }
         }
     }
+
+    /// Returns the surface normal at the given point.
+    pub fn normal(&self, point: Tuple4) -> Tuple4 {
+        match self.shape {
+            Shape::Sphere {} => {
+                let inverse_transform = self.transform.inverse();
+                let object_point = inverse_transform * point;
+                let object_normal = object_point - point3(0., 0., 0.);
+                let mut world_normal = inverse_transform.transpose() * object_normal;
+                world_normal.w = 0.;
+                world_normal.normalize()
+            }
+        }
+    }
 }
 
 pub fn hit(intersections: Intersections) -> Option<Intersection> {
@@ -81,6 +95,7 @@ pub fn hit(intersections: Intersections) -> Option<Intersection> {
 mod tests {
     use super::*;
     use crate::transform::*;
+    use assert_approx_eq::assert_approx_eq;
 
     fn intersection<'a>(t: f32, object: &'a Object) -> Intersection<'a> {
         Intersection { t, object }
@@ -158,6 +173,73 @@ mod tests {
         s.transform = translate(5., 0., 0.);
         let xs = s.intersect(r);
         assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_x_axis() {
+        let s = sphere();
+        let n = s.normal(point3(1., 0., 0.));
+        assert_eq!(n, vector3(1., 0., 0.,));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_y_axis() {
+        let s = sphere();
+        let n = s.normal(point3(0., 1., 0.));
+        assert_eq!(n, vector3(0., 1., 0.,));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_point_on_the_z_axis() {
+        let s = sphere();
+        let n = s.normal(point3(0., 0., 1.));
+        assert_eq!(n, vector3(0., 0., 1.,));
+    }
+
+    #[test]
+    fn the_normal_on_a_sphere_at_a_nonaxial_point() {
+        let s = sphere();
+        let root3over3 = (3 as f32).sqrt() / 3.;
+        let n = s.normal(point3(root3over3, root3over3, root3over3));
+        assert_approx_eq!(n.x, root3over3);
+        assert_approx_eq!(n.y, root3over3);
+        assert_approx_eq!(n.z, root3over3);
+    }
+
+    #[test]
+    fn the_normal_is_a_normalized_vector() {
+        let s = sphere();
+        let root3over3 = (3 as f32).sqrt() / 3.;
+        let n = s.normal(point3(root3over3, root3over3, root3over3));
+        let normalized = n.normalize();
+        assert_approx_eq!(n.x, normalized.x);
+        assert_approx_eq!(n.y, normalized.y);
+        assert_approx_eq!(n.z, normalized.z);
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_translated_sphere() {
+        let mut s = sphere();
+        s.transform = translate(0., 1., 0.);
+        let n = s.normal(point3(0., 1.70711, -0.70711));
+        assert_approx_eq!(n.x, 0., 1e-5);
+        assert_approx_eq!(n.y, 0.70711, 1e-5);
+        assert_approx_eq!(n.z, -0.70711, 1e-5);
+    }
+
+    #[test]
+    fn computing_the_normal_on_a_transformed_sphere() {
+        let mut s = sphere();
+        let m = scale(1., 0.5, 1.) * rotate_z(std::f32::consts::PI / 5.);
+        s.transform = m;
+        let n = s.normal(point3(
+            0.,
+            2. * std::f32::consts::FRAC_1_SQRT_2,
+            -2. * std::f32::consts::FRAC_1_SQRT_2,
+        ));
+        assert_approx_eq!(n.x, 0., 1e-5);
+        assert_approx_eq!(n.y, 0.97014, 1e-5);
+        assert_approx_eq!(n.z, -0.24254, 1e-5);
     }
 
     #[test]

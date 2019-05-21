@@ -1,14 +1,24 @@
+use crate::matrix::*;
 use crate::ray::*;
 use crate::tuple::*;
 
 #[derive(Debug, PartialEq)]
-pub enum Object {
+pub enum Shape {
     Sphere {},
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Object {
+    pub shape: Shape,
+    pub transform: Matrix4,
 }
 
 /// Constructs a unit sphere centered at the origin (0, 0, 0).
 pub fn sphere() -> Object {
-    Object::Sphere {}
+    Object {
+        shape: Shape::Sphere {},
+        transform: I4,
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -22,8 +32,12 @@ type Intersections<'a> = Vec<Intersection<'a>>;
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
     pub fn intersect(&self, ray: Ray) -> Intersections {
-        match *self {
-            Object::Sphere {} => {
+        match self.shape {
+            Shape::Sphere {} => {
+                // Instead of transforming the sphere, apply the inverse
+                // transformation to the ray.
+                let ray = ray.transform(self.transform.inverse());
+
                 // The vector from the sphere's center, to the ray origin
                 // (remember: the sphere is centered at the world origin)
                 let sphere_to_ray = ray.origin - point3(0., 0., 0.);
@@ -66,6 +80,7 @@ pub fn hit(intersections: Intersections) -> Option<Intersection> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transform::*;
 
     fn intersection<'a>(t: f32, object: &'a Object) -> Intersection<'a> {
         Intersection { t, object }
@@ -109,6 +124,40 @@ mod tests {
         let s = sphere();
         let xs = s.intersect(r);
         assert_eq!(xs, vec![intersection(-6.0, &s), intersection(-4.0, &s)]);
+    }
+
+    #[test]
+    fn a_spheres_default_transformation() {
+        let s = sphere();
+        assert_eq!(s.transform, I4);
+    }
+
+    #[test]
+    fn changing_a_spheres_transformation() {
+        let mut s = sphere();
+        let t = translate(2., 3., 4.);
+        s.transform = t;
+        assert_eq!(s.transform, t);
+    }
+
+    #[test]
+    fn intersecting_a_scaled_sphere_with_a_ray() {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let mut s = sphere();
+        s.transform = scale(2., 2., 2.);
+        let xs = s.intersect(r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 3.);
+        assert_eq!(xs[1].t, 7.);
+    }
+
+    #[test]
+    fn intersecting_a_translated_sphere_with_a_ray() {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let mut s = sphere();
+        s.transform = translate(5., 0., 0.);
+        let xs = s.intersect(r);
+        assert_eq!(xs.len(), 0);
     }
 
     #[test]

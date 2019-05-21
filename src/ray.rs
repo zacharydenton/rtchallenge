@@ -1,3 +1,4 @@
+use crate::matrix::*;
 use crate::tuple::*;
 
 pub struct Ray {
@@ -17,11 +18,18 @@ impl Ray {
     pub fn position(&self, t: f32) -> Tuple4 {
         self.origin + self.direction * t
     }
+
+    /// Returns a new ray with the given transformation matrix applied to origin
+    /// and direction.
+    pub fn transform(&self, matrix: Matrix4) -> Ray {
+        ray(matrix * self.origin, matrix * self.direction)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transform::*;
 
     #[test]
     fn creating_and_querying_a_ray() {
@@ -39,5 +47,23 @@ mod tests {
         assert_eq!(r.position(1.0), point3(3., 3., 4.,));
         assert_eq!(r.position(-1.0), point3(1., 3., 4.,));
         assert_eq!(r.position(2.5), point3(4.5, 3., 4.,));
+    }
+
+    #[test]
+    fn translating_a_ray() {
+        let r = ray(point3(1., 2., 3.), vector3(0., 1., 0.));
+        let m = translate(3., 4., 5.);
+        let r2 = r.transform(m);
+        assert_eq!(r2.origin, point3(4., 6., 8.));
+        assert_eq!(r2.direction, vector3(0., 1., 0.,));
+    }
+
+    #[test]
+    fn scaling_a_ray() {
+        let r = ray(point3(1., 2., 3.), vector3(0., 1., 0.));
+        let m = scale(2., 3., 4.);
+        let r2 = r.transform(m);
+        assert_eq!(r2.origin, point3(2., 6., 12.));
+        assert_eq!(r2.direction, vector3(0., 3., 0.,));
     }
 }

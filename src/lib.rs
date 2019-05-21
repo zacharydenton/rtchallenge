@@ -1,5 +1,6 @@
 pub mod canvas;
 pub mod color;
+pub mod light;
 pub mod matrix;
 pub mod object;
 pub mod ppm;

@@ -42,9 +42,9 @@ impl Object {
                 // (remember: the sphere is centered at the world origin)
                 let sphere_to_ray = ray.origin - point3(0., 0., 0.);
 
-                let a = ray.direction.dot(&ray.direction);
-                let b = 2. * ray.direction.dot(&sphere_to_ray);
-                let c = sphere_to_ray.dot(&sphere_to_ray) - 1.;
+                let a = ray.direction.dot(ray.direction);
+                let b = 2. * ray.direction.dot(sphere_to_ray);
+                let c = sphere_to_ray.dot(sphere_to_ray) - 1.;
 
                 let discriminant = b * b - 4. * a * c;
 

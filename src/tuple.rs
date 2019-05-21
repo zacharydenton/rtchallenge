@@ -60,7 +60,7 @@ impl Tuple4 {
     ///
     /// If the two vectors are unit vectors, the dot product is the cosine of
     /// the angle between them.
-    pub fn dot(&self, other: &Tuple4) -> f32 {
+    pub fn dot(&self, other: Tuple4) -> f32 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
@@ -70,7 +70,7 @@ impl Tuple4 {
     /// Returns the cross product (aka vector product) with another vector.
     ///
     /// This is a new vector that is perpendicular to both of the original vectors.
-    pub fn cross(&self, other: &Tuple4) -> Tuple4 {
+    pub fn cross(&self, other: Tuple4) -> Tuple4 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
@@ -80,6 +80,11 @@ impl Tuple4 {
             z: self.x * other.y - self.y * other.x,
             w: 0.,
         }
+    }
+
+    /// Returns a new vector representing this vector reflected around the normal.
+    pub fn reflect(&self, normal: Tuple4) -> Tuple4 {
+        *self - normal * 2. * self.dot(normal)
     }
 }
 
@@ -276,14 +281,35 @@ mod tests {
     fn the_dot_product_of_two_vectors() {
         let a = vector3(1., 2., 3.);
         let b = vector3(2., 3., 4.);
-        assert_eq!(a.dot(&b), 20.);
+        assert_eq!(a.dot(b), 20.);
     }
 
     #[test]
     fn the_cross_product_of_two_vectors() {
         let a = vector3(1., 2., 3.);
         let b = vector3(2., 3., 4.);
-        assert_eq!(a.cross(&b), vector3(-1., 2., -1.));
-        assert_eq!(b.cross(&a), vector3(1., -2., 1.));
+        assert_eq!(a.cross(b), vector3(-1., 2., -1.));
+        assert_eq!(b.cross(a), vector3(1., -2., 1.));
+    }
+
+    #[test]
+    fn reflecting_a_vector_approaching_at_45_degrees() {
+        let v = vector3(1., -1., 0.);
+        let n = vector3(0., 1., 0.);
+        let r = v.reflect(n);
+        assert_approx_eq!(r.x, 1.);
+        assert_approx_eq!(r.y, 1.);
+        assert_approx_eq!(r.z, 0.);
+    }
+
+    #[test]
+    fn reflecting_a_vector_off_a_slanted_surface() {
+        let v = vector3(0., -1., 0.);
+        let root2over2 = std::f32::consts::SQRT_2 / 2.;
+        let n = vector3(root2over2, root2over2, 0.);
+        let r = v.reflect(n);
+        assert_approx_eq!(r.x, 1.);
+        assert_approx_eq!(r.y, 0.);
+        assert_approx_eq!(r.z, 0.);
     }
 }

@@ -26,12 +26,12 @@ pub fn vector3(x: f32, y: f32, z: f32) -> Tuple4 {
 
 impl Tuple4 {
     /// Whether the Tuple4 is a point (w = 1.0).
-    pub fn is_point3(&self) -> bool {
+    pub fn is_point(&self) -> bool {
         self.w == 1.0
     }
 
     /// Whether the Tuple4 is a vector (w = 0.0).
-    pub fn is_vector3(&self) -> bool {
+    pub fn is_vector(&self) -> bool {
         self.w == 0.0
     }
 
@@ -61,8 +61,8 @@ impl Tuple4 {
     /// If the two vectors are unit vectors, the dot product is the cosine of
     /// the angle between them.
     pub fn dot(&self, other: &Tuple4) -> f32 {
-        debug_assert!(self.is_vector3());
-        debug_assert!(other.is_vector3());
+        debug_assert!(self.is_vector());
+        debug_assert!(other.is_vector());
 
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -71,8 +71,8 @@ impl Tuple4 {
     ///
     /// This is a new vector that is perpendicular to both of the original vectors.
     pub fn cross(&self, other: &Tuple4) -> Tuple4 {
-        debug_assert!(self.is_vector3());
-        debug_assert!(other.is_vector3());
+        debug_assert!(self.is_vector());
+        debug_assert!(other.is_vector());
 
         Tuple4 {
             x: self.y * other.z - self.z * other.y,
@@ -154,41 +154,41 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
-    fn a_tuple_with_w_1_is_a_point3() {
+    fn a_tuple_with_w_1_is_a_point() {
         let a = tuple4(4.3, -4.2, 3.1, 1.0);
         assert_eq!(a.x, 4.3);
         assert_eq!(a.y, -4.2);
         assert_eq!(a.z, 3.1);
         assert_eq!(a.w, 1.0);
-        assert!(a.is_point3());
-        assert!(!a.is_vector3());
+        assert!(a.is_point());
+        assert!(!a.is_vector());
     }
 
     #[test]
-    fn a_tuple_with_w_0_is_a_vector3() {
+    fn a_tuple_with_w_0_is_a_vector() {
         let a = tuple4(4.3, -4.2, 3.1, 0.0);
         assert_eq!(a.x, 4.3);
         assert_eq!(a.y, -4.2);
         assert_eq!(a.z, 3.1);
         assert_eq!(a.w, 0.0);
-        assert!(!a.is_point3());
-        assert!(a.is_vector3());
+        assert!(!a.is_point());
+        assert!(a.is_vector());
     }
 
     #[test]
     fn point_creates_tuples_with_w_1() {
         let p = point3(4., -4., 3.);
         assert_eq!(p, tuple4(4., -4., 3., 1.));
-        assert!(p.is_point3());
-        assert!(!p.is_vector3());
+        assert!(p.is_point());
+        assert!(!p.is_vector());
     }
 
     #[test]
     fn vector_creates_tuples_with_w_0() {
         let p = vector3(4., -4., 3.);
         assert_eq!(p, tuple4(4., -4., 3., 0.));
-        assert!(!p.is_point3());
-        assert!(p.is_vector3());
+        assert!(!p.is_point());
+        assert!(p.is_vector());
     }
 
     #[test]
@@ -206,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn subtracting_a_vector_from_a_point3() {
+    fn subtracting_a_vector_from_a_point() {
         let p = point3(3., 2., 1.);
         let v = vector3(5., 6., 7.);
         assert_eq!(p - v, point3(-2., -4., -6.));
@@ -220,7 +220,7 @@ mod tests {
     }
 
     #[test]
-    fn negating_a_tuple4() {
+    fn negating_a_tuple() {
         let a = tuple4(1., -2., 3., -4.);
         assert_eq!(-a, tuple4(-1., 2., -3., 4.));
     }
@@ -266,7 +266,7 @@ mod tests {
     }
 
     #[test]
-    fn the_magnitude_of_a_normalized_vector3() {
+    fn the_magnitude_of_a_normalized_vector() {
         let v = vector3(1., 2., 3.);
         let norm = v.normalize();
         assert_approx_eq!(norm.magnitude(), 1.);

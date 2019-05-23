@@ -480,44 +480,25 @@ impl Matrix4 {
             "Attempted to invert a non-invertible matrix."
         );
 
-        let determinant = self.determinant();
-        let cofactor_matrix = Matrix4 {
-            x0: self.cofactor(0, 0),
-            y0: self.cofactor(1, 0),
-            z0: self.cofactor(2, 0),
-            w0: self.cofactor(3, 0),
-            x1: self.cofactor(0, 1),
-            y1: self.cofactor(1, 1),
-            z1: self.cofactor(2, 1),
-            w1: self.cofactor(3, 1),
-            x2: self.cofactor(0, 2),
-            y2: self.cofactor(1, 2),
-            z2: self.cofactor(2, 2),
-            w2: self.cofactor(3, 2),
-            x3: self.cofactor(0, 3),
-            y3: self.cofactor(1, 3),
-            z3: self.cofactor(2, 3),
-            w3: self.cofactor(3, 3),
-        };
-        let transposed = cofactor_matrix.transpose();
+        let inv_determinant = 1. / self.determinant();
 
         Matrix4 {
-            x0: transposed.x0 / determinant,
-            y0: transposed.y0 / determinant,
-            z0: transposed.z0 / determinant,
-            w0: transposed.w0 / determinant,
-            x1: transposed.x1 / determinant,
-            y1: transposed.y1 / determinant,
-            z1: transposed.z1 / determinant,
-            w1: transposed.w1 / determinant,
-            x2: transposed.x2 / determinant,
-            y2: transposed.y2 / determinant,
-            z2: transposed.z2 / determinant,
-            w2: transposed.w2 / determinant,
-            x3: transposed.x3 / determinant,
-            y3: transposed.y3 / determinant,
-            z3: transposed.z3 / determinant,
-            w3: transposed.w3 / determinant,
+            x0: self.cofactor(0, 0) * inv_determinant,
+            y0: self.cofactor(0, 1) * inv_determinant,
+            z0: self.cofactor(0, 2) * inv_determinant,
+            w0: self.cofactor(0, 3) * inv_determinant,
+            x1: self.cofactor(1, 0) * inv_determinant,
+            y1: self.cofactor(1, 1) * inv_determinant,
+            z1: self.cofactor(1, 2) * inv_determinant,
+            w1: self.cofactor(1, 3) * inv_determinant,
+            x2: self.cofactor(2, 0) * inv_determinant,
+            y2: self.cofactor(2, 1) * inv_determinant,
+            z2: self.cofactor(2, 2) * inv_determinant,
+            w2: self.cofactor(2, 3) * inv_determinant,
+            x3: self.cofactor(3, 0) * inv_determinant,
+            y3: self.cofactor(3, 1) * inv_determinant,
+            z3: self.cofactor(3, 2) * inv_determinant,
+            w3: self.cofactor(3, 3) * inv_determinant,
         }
     }
 }
@@ -564,6 +545,7 @@ impl ops::Mul<Tuple4> for Matrix4 {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
+    use test::Bencher;
 
     #[test]
     fn constructing_and_inspecting_a_2x2_matrix() {
@@ -754,11 +736,11 @@ mod tests {
         );
         let b = a.inverse();
 
-        assert_eq!(a.determinant(), 532.);
-        assert_eq!(a.cofactor(2, 3), -160.);
-        assert_eq!(b.w2, -160. / 532.);
-        assert_eq!(a.cofactor(3, 2), 105.);
-        assert_eq!(b.z3, 105. / 532.);
+        assert_approx_eq!(a.determinant(), 532.);
+        assert_approx_eq!(a.cofactor(2, 3), -160.);
+        assert_approx_eq!(b.w2, -160. / 532.);
+        assert_approx_eq!(a.cofactor(3, 2), 105.);
+        assert_approx_eq!(b.z3, 105. / 532.);
 
         assert_approx_eq!(b.x0, 0.21805, 1.0e-5);
         assert_approx_eq!(b.x1, 0.45113, 1.0e-5);
@@ -855,5 +837,41 @@ mod tests {
         assert_approx_eq!(d.w1, a.w1, 1.0e-5);
         assert_approx_eq!(d.w2, a.w2, 1.0e-5);
         assert_approx_eq!(d.w3, a.w3, 1.0e-5);
+    }
+
+    #[bench]
+    fn bench_matrix_multiply(bencher: &mut Bencher) {
+        let a = matrix4(
+            3., -9., 7., 3., 3., -8., 2., -9., -4., 4., 4., 1., -6., 5., -1., 1.,
+        );
+        let b = matrix4(
+            8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
+        );
+        bencher.iter(|| a * b);
+    }
+
+    #[bench]
+    fn bench_matrix_tuple_multiply(bencher: &mut Bencher) {
+        let a = matrix4(
+            1., 2., 3., 4., 2., 4., 4., 2., 8., 6., 4., 1., 0., 0., 0., 1.,
+        );
+        let b = tuple4(1., 2., 3., 1.);
+        bencher.iter(|| a * b);
+    }
+
+    #[bench]
+    fn bench_matrix_inverse(bencher: &mut Bencher) {
+        let m = matrix4(
+            8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
+        );
+        bencher.iter(|| m.inverse());
+    }
+
+    #[bench]
+    fn bench_matrix_determinant(bencher: &mut Bencher) {
+        let m = matrix4(
+            8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
+        );
+        bencher.iter(|| m.determinant());
     }
 }

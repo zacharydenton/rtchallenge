@@ -1,3 +1,7 @@
+#![feature(test)]
+
+extern crate test;
+
 pub mod canvas;
 pub mod color;
 pub mod light;

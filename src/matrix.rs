@@ -502,25 +502,29 @@ impl Matrix4 {
             "Attempted to invert a non-invertible matrix."
         );
 
-        let inv_determinant = 1. / self.determinant();
+        let c00 = self.minor(0, 0);
+        let c01 = -self.minor(0, 1);
+        let c02 = self.minor(0, 2);
+        let c03 = -self.minor(0, 3);
+        let inv_determinant = 1. / (self.x0 * c00 + self.x1 * c01 + self.x2 * c02 + self.x3 * c03);
 
         Matrix4 {
-            x0: self.cofactor(0, 0) * inv_determinant,
-            y0: self.cofactor(0, 1) * inv_determinant,
-            z0: self.cofactor(0, 2) * inv_determinant,
-            w0: self.cofactor(0, 3) * inv_determinant,
-            x1: self.cofactor(1, 0) * inv_determinant,
-            y1: self.cofactor(1, 1) * inv_determinant,
-            z1: self.cofactor(1, 2) * inv_determinant,
-            w1: self.cofactor(1, 3) * inv_determinant,
-            x2: self.cofactor(2, 0) * inv_determinant,
-            y2: self.cofactor(2, 1) * inv_determinant,
-            z2: self.cofactor(2, 2) * inv_determinant,
-            w2: self.cofactor(2, 3) * inv_determinant,
-            x3: self.cofactor(3, 0) * inv_determinant,
-            y3: self.cofactor(3, 1) * inv_determinant,
-            z3: self.cofactor(3, 2) * inv_determinant,
-            w3: self.cofactor(3, 3) * inv_determinant,
+            x0: c00 * inv_determinant,
+            y0: c01 * inv_determinant,
+            z0: c02 * inv_determinant,
+            w0: c03 * inv_determinant,
+            x1: -self.minor(1, 0) * inv_determinant,
+            y1: self.minor(1, 1) * inv_determinant,
+            z1: -self.minor(1, 2) * inv_determinant,
+            w1: self.minor(1, 3) * inv_determinant,
+            x2: self.minor(2, 0) * inv_determinant,
+            y2: -self.minor(2, 1) * inv_determinant,
+            z2: self.minor(2, 2) * inv_determinant,
+            w2: -self.minor(2, 3) * inv_determinant,
+            x3: -self.minor(3, 0) * inv_determinant,
+            y3: self.minor(3, 1) * inv_determinant,
+            z3: -self.minor(3, 2) * inv_determinant,
+            w3: self.minor(3, 3) * inv_determinant,
         }
     }
 }

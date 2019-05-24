@@ -34,7 +34,7 @@ type Intersections<'a> = Vec<Intersection<'a>>;
 
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
-    pub fn intersect(&self, ray: Ray) -> Intersections {
+    pub fn intersect(&self, ray: &Ray) -> Intersections {
         match self.shape {
             Shape::Sphere {} => {
                 // Instead of transforming the sphere, apply the inverse
@@ -108,7 +108,7 @@ mod tests {
     fn a_ray_intersects_a_sphere_at_two_points() {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let s = sphere();
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs, vec![intersection(4.0, &s), intersection(6.0, &s)]);
     }
 
@@ -116,7 +116,7 @@ mod tests {
     fn a_ray_intersects_a_sphere_at_a_tangent() {
         let r = ray(point3(0., 1., -5.), vector3(0., 0., 1.));
         let s = sphere();
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs, vec![intersection(5.0, &s), intersection(5.0, &s)]);
     }
 
@@ -124,7 +124,7 @@ mod tests {
     fn a_ray_misses_a_sphere() {
         let r = ray(point3(0., 2., -5.), vector3(0., 0., 1.));
         let s = sphere();
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs, vec![]);
     }
 
@@ -132,7 +132,7 @@ mod tests {
     fn a_ray_originates_inside_a_sphere() {
         let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
         let s = sphere();
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs, vec![intersection(-1.0, &s), intersection(1.0, &s)]);
     }
 
@@ -140,7 +140,7 @@ mod tests {
     fn a_sphere_is_behind_a_ray() {
         let r = ray(point3(0., 0., 5.), vector3(0., 0., 1.));
         let s = sphere();
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs, vec![intersection(-6.0, &s), intersection(-4.0, &s)]);
     }
 
@@ -178,7 +178,7 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let mut s = sphere();
         s.transform = scale(2., 2., 2.);
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs.len(), 2);
         assert_eq!(xs[0].t, 3.);
         assert_eq!(xs[1].t, 7.);
@@ -189,7 +189,7 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let mut s = sphere();
         s.transform = translate(5., 0., 0.);
-        let xs = s.intersect(r);
+        let xs = s.intersect(&r);
         assert_eq!(xs.len(), 0);
     }
 

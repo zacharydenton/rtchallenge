@@ -18,6 +18,7 @@ pub fn matrix2(x0: f32, x1: f32, y0: f32, y1: f32) -> Matrix2 {
 }
 
 impl Matrix2 {
+    #[inline]
     pub fn determinant(&self) -> f32 {
         self.x0 * self.y1 - self.x1 * self.y0
     }
@@ -133,22 +134,43 @@ impl Matrix3 {
         }
     }
 
+    #[inline]
     pub fn minor(&self, row: usize, column: usize) -> f32 {
-        self.submatrix(row, column).determinant()
-    }
-
-    pub fn cofactor(&self, row: usize, column: usize) -> f32 {
-        if row + column & 1 == 1 {
-            -self.minor(row, column)
-        } else {
-            self.minor(row, column)
+        match (row, column) {
+            (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
+            (0, 1) => (self.y0 * self.z2 - self.y2 * self.z0),
+            (0, 2) => (self.y0 * self.z1 - self.y1 * self.z0),
+            (1, 0) => (self.x1 * self.z2 - self.x2 * self.z1),
+            (1, 1) => (self.x0 * self.z2 - self.x2 * self.z0),
+            (1, 2) => (self.x0 * self.z1 - self.x1 * self.z0),
+            (2, 0) => (self.x1 * self.y2 - self.x2 * self.y1),
+            (2, 1) => (self.x0 * self.y2 - self.x2 * self.y0),
+            (2, 2) => (self.x0 * self.y1 - self.x1 * self.y0),
+            (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
 
+    #[inline]
+    pub fn cofactor(&self, row: usize, column: usize) -> f32 {
+        match (row, column) {
+            (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
+            (0, 1) => -(self.y0 * self.z2 - self.y2 * self.z0),
+            (0, 2) => (self.y0 * self.z1 - self.y1 * self.z0),
+            (1, 0) => -(self.x1 * self.z2 - self.x2 * self.z1),
+            (1, 1) => (self.x0 * self.z2 - self.x2 * self.z0),
+            (1, 2) => -(self.x0 * self.z1 - self.x1 * self.z0),
+            (2, 0) => (self.x1 * self.y2 - self.x2 * self.y1),
+            (2, 1) => -(self.x0 * self.y2 - self.x2 * self.y0),
+            (2, 2) => (self.x0 * self.y1 - self.x1 * self.y0),
+            (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
+        }
+    }
+
+    #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x0 * self.cofactor(0, 0)
-            + self.x1 * self.cofactor(0, 1)
-            + self.x2 * self.cofactor(0, 2)
+        self.x0 * (self.y1 * self.z2 - self.y2 * self.z1)
+            - self.x1 * (self.y0 * self.z2 - self.y2 * self.z0)
+            + self.x2 * (self.y0 * self.z1 - self.y1 * self.z0)
     }
 }
 
@@ -464,10 +486,10 @@ impl Matrix4 {
     }
 
     pub fn determinant(&self) -> f32 {
-        self.x0 * self.cofactor(0, 0)
-            + self.x1 * self.cofactor(0, 1)
-            + self.x2 * self.cofactor(0, 2)
-            + self.x3 * self.cofactor(0, 3)
+        self.x0 * self.minor(0, 0)
+            - self.x1 * self.minor(0, 1)
+            + self.x2 * self.minor(0, 2)
+            - self.x3 * self.minor(0, 3)
     }
 
     pub fn is_invertible(&self) -> bool {
@@ -506,6 +528,7 @@ impl Matrix4 {
 impl ops::Mul for Matrix4 {
     type Output = Matrix4;
 
+    #[inline]
     fn mul(self, other: Matrix4) -> Matrix4 {
         Matrix4 {
             x0: self.x0 * other.x0 + self.x1 * other.y0 + self.x2 * other.z0 + self.x3 * other.w0,
@@ -531,6 +554,7 @@ impl ops::Mul for Matrix4 {
 impl ops::Mul<Tuple4> for Matrix4 {
     type Output = Tuple4;
 
+    #[inline]
     fn mul(self, other: Tuple4) -> Tuple4 {
         Tuple4 {
             x: self.x0 * other.x + self.x1 * other.y + self.x2 * other.z + self.x3 * other.w,
@@ -873,5 +897,25 @@ mod tests {
             8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
         );
         bencher.iter(|| m.determinant());
+    }
+
+    #[bench]
+    fn bench_matrix_cofactor(bencher: &mut Bencher) {
+        let m = matrix4(
+            8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
+        );
+        bencher.iter(|| m.cofactor(1, 1));
+    }
+
+    #[bench]
+    fn bench_matrix3_determinant(bencher: &mut Bencher) {
+        let m = matrix3(1., 2., 6., -5., 8., -4., 2., 6., 4.);
+        bencher.iter(|| m.determinant());
+    }
+
+    #[bench]
+    fn bench_matrix3_cofactor(bencher: &mut Bencher) {
+        let m = matrix3(1., 2., 6., -5., 8., -4., 2., 6., 4.);
+        bencher.iter(|| m.cofactor(1, 1));
     }
 }

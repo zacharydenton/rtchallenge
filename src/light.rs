@@ -9,8 +9,8 @@ enum LightKind {
 #[derive(Debug)]
 pub struct Light {
     kind: LightKind,
-    position: Tuple4,
-    intensity: Color,
+    pub position: Tuple4,
+    pub intensity: Color,
 }
 
 pub fn point_light(position: Tuple4, intensity: Color) -> Light {

@@ -1,3 +1,4 @@
+use crate::material::*;
 use crate::matrix::*;
 use crate::ray::*;
 use crate::tuple::*;
@@ -11,6 +12,7 @@ pub enum Shape {
 pub struct Object {
     pub shape: Shape,
     pub transform: Matrix4,
+    pub material: Material,
 }
 
 /// Constructs a unit sphere centered at the origin (0, 0, 0).
@@ -18,6 +20,7 @@ pub fn sphere() -> Object {
     Object {
         shape: Shape::Sphere {},
         transform: I4,
+        material: material(),
     }
 }
 
@@ -153,6 +156,21 @@ mod tests {
         let t = translate(2., 3., 4.);
         s.transform = t;
         assert_eq!(s.transform, t);
+    }
+
+    #[test]
+    fn a_sphere_has_a_default_material() {
+        let s = sphere();
+        assert_eq!(s.material, material());
+    }
+
+    #[test]
+    fn a_sphere_may_be_assigned_a_material() {
+        let mut s = sphere();
+        let mut m = material();
+        m.ambient = 1.;
+        s.material = m;
+        assert_eq!(s.material, m);
     }
 
     #[test]

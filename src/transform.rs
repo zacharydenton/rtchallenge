@@ -1,4 +1,5 @@
 use crate::matrix::*;
+use crate::tuple::*;
 
 pub fn translate(x: f32, y: f32, z: f32) -> Matrix4 {
     matrix4(1., 0., 0., x, 0., 1., 0., y, 0., 0., 1., z, 0., 0., 0., 1.)
@@ -77,10 +78,23 @@ pub fn shear(xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Matrix4 {
     )
 }
 
+/// Returns a view transform matrix given the point where the eye is looking
+/// from, the point where the eye is looking to, and a vector indicating which
+/// direction is up.
+pub fn view_transform(from: Tuple4, to: Tuple4, up: Tuple4) -> Matrix4 {
+    let forward = (to - from).normalize();
+    let left = forward.cross(up.normalize());
+    let true_up = left.cross(forward);
+    let orientation = matrix4(
+        left.x, left.y, left.z, 0., true_up.x, true_up.y, true_up.z, 0., -forward.x, -forward.y,
+        -forward.z, 0., 0., 0., 0., 1.,
+    );
+    orientation * translate(-from.x, -from.y, -from.z)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tuple::*;
     use assert_approx_eq::assert_approx_eq;
 
     #[test]
@@ -265,5 +279,57 @@ mod tests {
         assert_approx_eq!(p2.x, 15.);
         assert_approx_eq!(p2.y, 0.);
         assert_approx_eq!(p2.z, 7.);
+    }
+
+    #[test]
+    fn the_transformation_matrix_for_the_default_orientation() {
+        let from = point3(0., 0., 0.);
+        let to = point3(0., 0., -1.);
+        let up = vector3(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, I4);
+    }
+
+    #[test]
+    fn a_view_transformation_matrix_looking_in_positive_z_direction() {
+        let from = point3(0., 0., 0.);
+        let to = point3(0., 0., 1.);
+        let up = vector3(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, scale(-1., 1., -1.));
+    }
+
+    #[test]
+    fn the_view_transformation_moves_the_world() {
+        let from = point3(0., 0., 8.);
+        let to = point3(0., 0., 0.);
+        let up = vector3(0., 1., 0.);
+        let t = view_transform(from, to, up);
+        assert_eq!(t, translate(0., 0., -8.));
+    }
+
+    #[test]
+    fn an_arbitrary_view_transformation() {
+        let from = point3(1., 3., 2.);
+        let to = point3(4., -2., 8.);
+        let up = vector3(1., 1., 0.);
+        let t = view_transform(from, to, up);
+
+        assert_approx_eq!(t.x0, -0.50709, 1e-5);
+        assert_approx_eq!(t.x1, 0.50709, 1e-5);
+        assert_approx_eq!(t.x2, 0.67612, 1e-5);
+        assert_approx_eq!(t.x3, -2.36643, 1e-5);
+        assert_approx_eq!(t.y0, 0.76772, 1e-5);
+        assert_approx_eq!(t.y1, 0.60609, 1e-5);
+        assert_approx_eq!(t.y2, 0.12122, 1e-5);
+        assert_approx_eq!(t.y3, -2.82843, 1e-5);
+        assert_approx_eq!(t.z0, -0.35857, 1e-5);
+        assert_approx_eq!(t.z1, 0.59761, 1e-5);
+        assert_approx_eq!(t.z2, -0.71714, 1e-5);
+        assert_approx_eq!(t.z3, 0.00000, 1e-5);
+        assert_approx_eq!(t.w0, 0.00000, 1e-5);
+        assert_approx_eq!(t.w1, 0.00000, 1e-5);
+        assert_approx_eq!(t.w2, 0.00000, 1e-5);
+        assert_approx_eq!(t.w3, 1.00000, 1e-5);
     }
 }

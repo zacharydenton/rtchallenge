@@ -30,7 +30,7 @@ pub struct Intersection<'a> {
     pub object: &'a Object,
 }
 
-type Intersections<'a> = Vec<Intersection<'a>>;
+pub type Intersections<'a> = Vec<Intersection<'a>>;
 
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
@@ -99,6 +99,7 @@ mod tests {
     use super::*;
     use crate::transform::*;
     use assert_approx_eq::assert_approx_eq;
+    use test::Bencher;
 
     fn intersection<'a>(t: f32, object: &'a Object) -> Intersection<'a> {
         Intersection { t, object }
@@ -300,5 +301,13 @@ mod tests {
         let xs = vec![i1, i2, i3, i4];
         let i = hit(xs);
         assert_eq!(i, Some(i4));
+    }
+
+    #[bench]
+    fn bench_intersecting_a_scaled_sphere_with_a_ray(bencher: &mut Bencher) {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let mut s = sphere();
+        s.transform = scale(2., 2., 2.);
+        bencher.iter(|| s.intersect(&r));
     }
 }

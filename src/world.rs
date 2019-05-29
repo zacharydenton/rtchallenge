@@ -35,6 +35,8 @@ pub fn default_world() -> World {
 }
 
 impl World {
+    /// Iterates over all of the objects in the world, intersects each of them
+    /// with the ray, and returns the intersections in sorted order.
     pub fn intersect(&self, ray: &Ray) -> Intersections {
         let mut intersections = self
             .objects

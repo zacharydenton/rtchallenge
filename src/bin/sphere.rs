@@ -28,19 +28,21 @@ fn main() {
             let ray = ray(origin, direction);
 
             match hit(sphere.intersect(&ray)) {
-                Some(Intersection { t, object }) => {
-                    let point = ray.position(t);
-                    let normal = object.normal(point);
-                    let eye = -ray.direction;
-                    let color = object.material.lighting(&light, &point, &eye, &normal);
-
+                Some(Intersection {
+                    object,
+                    point: Some(point),
+                    eyev: Some(eyev),
+                    normalv: Some(normalv),
+                    ..
+                }) => {
+                    let color = object.material.lighting(&light, &point, &eyev, &normalv);
                     let x = (canvas.width as f32 / 2. + target.x * canvas.width as f32 / 2.).round()
                         as usize;
                     let y = (canvas.height as f32 / 2. - target.y * canvas.height as f32 / 2.)
                         .round() as usize;
                     canvas.set_color(x, y, &color);
                 }
-                None => {}
+                _ => {}
             }
         }
     }

@@ -28,6 +28,31 @@ pub fn sphere() -> Object {
 pub struct Intersection<'a> {
     pub t: f32,
     pub object: &'a Object,
+    pub point: Option<Tuple4>,
+    pub eyev: Option<Tuple4>,
+    pub normalv: Option<Tuple4>,
+    pub inside: Option<bool>,
+}
+
+impl Intersection<'_> {
+    #[inline]
+    fn prepare(&mut self, ray: &Ray, inverse_transform: Matrix4) -> Self {
+        let point = ray.position(self.t);
+        let eyev = -ray.direction;
+        let normalv = self.object.normal_inv(point, inverse_transform);
+
+        self.point = Some(point);
+        self.eyev = Some(eyev);
+        if normalv.dot(eyev) < 0. {
+            self.normalv = Some(-normalv);
+            self.inside = Some(true);
+        } else {
+            self.normalv = Some(normalv);
+            self.inside = Some(false);
+        }
+
+        *self
+    }
 }
 
 pub type Intersections<'a> = Vec<Intersection<'a>>;
@@ -39,14 +64,15 @@ impl Object {
             Shape::Sphere {} => {
                 // Instead of transforming the sphere, apply the inverse
                 // transformation to the ray.
-                let ray = ray.transform(self.transform.inverse());
+                let inverse_transform = self.transform.inverse();
+                let transformed_ray = ray.transform(inverse_transform);
 
                 // The vector from the sphere's center, to the ray origin
                 // (remember: the sphere is centered at the world origin)
-                let sphere_to_ray = ray.origin - point3(0., 0., 0.);
+                let sphere_to_ray = transformed_ray.origin - point3(0., 0., 0.);
 
-                let a = ray.direction.dot(ray.direction);
-                let b = 2. * ray.direction.dot(sphere_to_ray);
+                let a = transformed_ray.direction.dot(transformed_ray.direction);
+                let b = 2. * transformed_ray.direction.dot(sphere_to_ray);
                 let c = sphere_to_ray.dot(sphere_to_ray) - 1.;
 
                 let discriminant = b * b - 4. * a * c;
@@ -60,11 +86,21 @@ impl Object {
                         Intersection {
                             t: t1,
                             object: self,
-                        },
+                            point: None,
+                            eyev: None,
+                            normalv: None,
+                            inside: None,
+                        }
+                        .prepare(ray, inverse_transform),
                         Intersection {
                             t: t2,
                             object: self,
-                        },
+                            point: None,
+                            eyev: None,
+                            normalv: None,
+                            inside: None,
+                        }
+                        .prepare(ray, inverse_transform),
                     ]
                 }
             }
@@ -74,8 +110,15 @@ impl Object {
     /// Returns the surface normal at the given point.
     pub fn normal(&self, point: Tuple4) -> Tuple4 {
         match self.shape {
+            Shape::Sphere {} => self.normal_inv(point, self.transform.inverse()),
+        }
+    }
+
+    /// Returns the surface normal at the given point (with precalculated
+    /// inverse transform).
+    fn normal_inv(&self, point: Tuple4, inverse_transform: Matrix4) -> Tuple4 {
+        match self.shape {
             Shape::Sphere {} => {
-                let inverse_transform = self.transform.inverse();
                 let object_point = inverse_transform * point;
                 let object_normal = object_point - point3(0., 0., 0.);
                 let mut world_normal = inverse_transform.transpose() * object_normal;
@@ -101,8 +144,15 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use test::Bencher;
 
-    fn intersection<'a>(t: f32, object: &'a Object) -> Intersection<'a> {
-        Intersection { t, object }
+    fn intersection(t: f32, object: &Object) -> Intersection {
+        Intersection {
+            t,
+            object,
+            point: None,
+            eyev: None,
+            normalv: None,
+            inside: None,
+        }
     }
 
     #[test]
@@ -110,7 +160,11 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let s = sphere();
         let xs = s.intersect(&r);
-        assert_eq!(xs, vec![intersection(4.0, &s), intersection(6.0, &s)]);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 4.0);
+        assert_eq!(xs[0].object, &s);
+        assert_eq!(xs[1].t, 6.0);
+        assert_eq!(xs[1].object, &s);
     }
 
     #[test]
@@ -118,7 +172,11 @@ mod tests {
         let r = ray(point3(0., 1., -5.), vector3(0., 0., 1.));
         let s = sphere();
         let xs = s.intersect(&r);
-        assert_eq!(xs, vec![intersection(5.0, &s), intersection(5.0, &s)]);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 5.0);
+        assert_eq!(xs[0].object, &s);
+        assert_eq!(xs[1].t, 5.0);
+        assert_eq!(xs[1].object, &s);
     }
 
     #[test]
@@ -126,7 +184,7 @@ mod tests {
         let r = ray(point3(0., 2., -5.), vector3(0., 0., 1.));
         let s = sphere();
         let xs = s.intersect(&r);
-        assert_eq!(xs, vec![]);
+        assert_eq!(xs.len(), 0);
     }
 
     #[test]
@@ -134,7 +192,11 @@ mod tests {
         let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
         let s = sphere();
         let xs = s.intersect(&r);
-        assert_eq!(xs, vec![intersection(-1.0, &s), intersection(1.0, &s)]);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, -1.0);
+        assert_eq!(xs[0].object, &s);
+        assert_eq!(xs[1].t, 1.0);
+        assert_eq!(xs[1].object, &s);
     }
 
     #[test]
@@ -142,7 +204,11 @@ mod tests {
         let r = ray(point3(0., 0., 5.), vector3(0., 0., 1.));
         let s = sphere();
         let xs = s.intersect(&r);
-        assert_eq!(xs, vec![intersection(-6.0, &s), intersection(-4.0, &s)]);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, -6.0);
+        assert_eq!(xs[0].object, &s);
+        assert_eq!(xs[1].t, -4.0);
+        assert_eq!(xs[1].object, &s);
     }
 
     #[test]
@@ -301,6 +367,46 @@ mod tests {
         let xs = vec![i1, i2, i3, i4];
         let i = hit(xs);
         assert_eq!(i, Some(i4));
+    }
+
+    #[test]
+    fn precomputing_the_state_of_an_intersection() {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let shape = sphere();
+        let xs = shape.intersect(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, 4.);
+        assert_eq!(xs[0].object, &shape);
+        assert_eq!(xs[0].point, Some(point3(0., 0., -1.)));
+        assert_eq!(xs[0].eyev, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[0].normalv, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[0].inside, Some(false));
+        assert_eq!(xs[1].t, 6.);
+        assert_eq!(xs[1].object, &shape);
+        assert_eq!(xs[1].point, Some(point3(0., 0., 1.)));
+        assert_eq!(xs[1].eyev, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[1].normalv, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[1].inside, Some(true));
+    }
+
+    #[test]
+    fn the_hit_when_an_intersection_occurs_on_the_inside() {
+        let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
+        let shape = sphere();
+        let xs = shape.intersect(&r);
+        assert_eq!(xs.len(), 2);
+        assert_eq!(xs[0].t, -1.);
+        assert_eq!(xs[0].object, &shape);
+        assert_eq!(xs[0].point, Some(point3(0., 0., -1.)));
+        assert_eq!(xs[0].eyev, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[0].normalv, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[0].inside, Some(false));
+        assert_eq!(xs[1].t, 1.);
+        assert_eq!(xs[1].object, &shape);
+        assert_eq!(xs[1].point, Some(point3(0., 0., 1.)));
+        assert_eq!(xs[1].eyev, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[1].normalv, Some(vector3(0., 0., -1.)));
+        assert_eq!(xs[1].inside, Some(true));
     }
 
     #[bench]

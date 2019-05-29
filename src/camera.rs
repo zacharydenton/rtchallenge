@@ -1,6 +1,8 @@
+use crate::canvas::*;
 use crate::matrix::*;
 use crate::ray::*;
 use crate::tuple::*;
+use crate::world::*;
 
 pub struct Camera {
     pub hsize: usize,
@@ -65,6 +67,20 @@ impl Camera {
     pub fn set_transform(&mut self, transform: Matrix4) {
         self.transform = transform;
         self.inverse_transform = transform.inverse();
+    }
+
+    pub fn render(&self, world: &World) -> Canvas {
+        let mut image = canvas(self.hsize, self.vsize);
+
+        for y in 0..image.height {
+            for x in 0..image.width {
+                let ray = self.ray(x, y);
+                let color = world.color_at(&ray);
+                image.set_color(x, y, &color);
+            }
+        }
+
+        image
     }
 }
 
@@ -138,6 +154,22 @@ mod tests {
         assert_approx_eq!(r.direction.x, std::f32::consts::SQRT_2 / 2., 1e-5);
         assert_approx_eq!(r.direction.y, 0.0, 1e-5);
         assert_approx_eq!(r.direction.z, -std::f32::consts::SQRT_2 / 2., 1e-5);
+    }
+
+    #[test]
+    fn rendering_a_world_with_a_camera() {
+        let w = default_world();
+        let mut c = camera(11, 11, std::f32::consts::FRAC_PI_2);
+        let from = point3(0., 0., -5.);
+        let to = point3(0., 0., 0.);
+        let up = vector3(0., 1., 0.);
+        c.set_transform(view_transform(from, to, up));
+        let image = c.render(&w);
+        let pixel = image.get_color(5, 5);
+
+        assert_approx_eq!(pixel.r, 0.38066, 1e-2);
+        assert_approx_eq!(pixel.g, 0.47583, 1e-2);
+        assert_approx_eq!(pixel.b, 0.2855, 1e-2);
     }
 
     #[bench]

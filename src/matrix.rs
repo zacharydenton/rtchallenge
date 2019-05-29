@@ -486,9 +486,7 @@ impl Matrix4 {
     }
 
     pub fn determinant(&self) -> f32 {
-        self.x0 * self.minor(0, 0)
-            - self.x1 * self.minor(0, 1)
-            + self.x2 * self.minor(0, 2)
+        self.x0 * self.minor(0, 0) - self.x1 * self.minor(0, 1) + self.x2 * self.minor(0, 2)
             - self.x3 * self.minor(0, 3)
     }
 

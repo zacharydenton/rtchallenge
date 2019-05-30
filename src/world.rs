@@ -60,6 +60,7 @@ impl World {
                     &intersection.point.unwrap(),
                     &intersection.eyev.unwrap(),
                     &intersection.normalv.unwrap(),
+                    self.is_shadowed(intersection.over_point.unwrap()),
                 )
             })
             .fold(color(0., 0., 0.), |acc, x| acc + x)
@@ -75,6 +76,20 @@ impl World {
         }
 
         self.shade(&intersections[0])
+    }
+
+    /// Whether the given point is considered to be in shadow.
+    pub fn is_shadowed(&self, point: Tuple4) -> bool {
+        // TODO: Check more than just the first light source.
+        let light = &self.lights[0];
+        let v = light.position - point;
+        let distance = v.magnitude();
+        let direction = v.normalize();
+
+        let r = ray(point, direction);
+        let intersections = self.intersect(&r);
+
+        intersections.len() > 0 && intersections[0].t < distance
     }
 }
 
@@ -169,6 +184,55 @@ mod tests {
         let c = w.color_at(&r);
 
         assert_eq!(c, w.objects[1].material.color);
+    }
+
+    #[test]
+    fn there_is_no_shadow_when_nothing_is_collinear_with_point_and_light() {
+        let w = default_world();
+        let p = point3(0., 10., 0.);
+        assert_eq!(w.is_shadowed(p), false);
+    }
+
+    #[test]
+    fn the_shadow_when_an_object_is_between_the_point_and_the_light() {
+        let w = default_world();
+        let p = point3(10., -10., 10.);
+        assert_eq!(w.is_shadowed(p), true);
+    }
+
+    #[test]
+    fn there_is_no_shadow_when_an_object_is_behind_the_light() {
+        let w = default_world();
+        let p = point3(-20., 20., -20.);
+        assert_eq!(w.is_shadowed(p), false);
+    }
+
+    #[test]
+    fn there_is_no_shadow_when_an_object_is_bheind_the_point() {
+        let w = default_world();
+        let p = point3(-2., 2., -2.);
+        assert_eq!(w.is_shadowed(p), false);
+    }
+
+    #[test]
+    fn shade_is_given_an_intersection_in_shadow() {
+        let mut w = world();
+        w.lights
+            .push(point_light(point3(0., 0., -10.), color(1., 1., 1.)));
+        let s1 = sphere();
+        w.objects.push(s1);
+        let mut s2 = sphere();
+        s2.transform = translate(0., 0., 10.);
+        w.objects.push(s2);
+        let r = ray(point3(0., 0., 5.), vector3(0., 0., 1.));
+
+        let xs = w.intersect(&r);
+        let i = xs.iter().find(|x| x.t == 4.).unwrap();
+        let c = w.shade(&i);
+
+        assert_approx_eq!(c.r, 0.1, 1e-5);
+        assert_approx_eq!(c.g, 0.1, 1e-5);
+        assert_approx_eq!(c.b, 0.1, 1e-5);
     }
 
     #[bench]

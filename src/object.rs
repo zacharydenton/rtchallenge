@@ -29,6 +29,7 @@ pub struct Intersection<'a> {
     pub t: f32,
     pub object: &'a Object,
     pub point: Option<Tuple4>,
+    pub over_point: Option<Tuple4>,
     pub eyev: Option<Tuple4>,
     pub normalv: Option<Tuple4>,
     pub inside: Option<bool>,
@@ -39,17 +40,20 @@ impl Intersection<'_> {
     fn prepare(&mut self, ray: &Ray, inverse_transform: Matrix4) -> Self {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
-        let normalv = self.object.normal_inv(point, inverse_transform);
+        let mut normalv = self.object.normal_inv(point, inverse_transform);
 
         self.point = Some(point);
         self.eyev = Some(eyev);
+
         if normalv.dot(eyev) < 0. {
-            self.normalv = Some(-normalv);
+            normalv = -normalv;
             self.inside = Some(true);
         } else {
-            self.normalv = Some(normalv);
             self.inside = Some(false);
         }
+
+        self.normalv = Some(normalv);
+        self.over_point = Some(point + normalv * 1e-2);
 
         *self
     }
@@ -87,6 +91,7 @@ impl Object {
                             t: t1,
                             object: self,
                             point: None,
+                            over_point: None,
                             eyev: None,
                             normalv: None,
                             inside: None,
@@ -96,6 +101,7 @@ impl Object {
                             t: t2,
                             object: self,
                             point: None,
+                            over_point: None,
                             eyev: None,
                             normalv: None,
                             inside: None,
@@ -149,6 +155,7 @@ mod tests {
             t,
             object,
             point: None,
+            over_point: None,
             eyev: None,
             normalv: None,
             inside: None,
@@ -407,6 +414,19 @@ mod tests {
         assert_eq!(xs[1].eyev, Some(vector3(0., 0., -1.)));
         assert_eq!(xs[1].normalv, Some(vector3(0., 0., -1.)));
         assert_eq!(xs[1].inside, Some(true));
+    }
+
+    #[test]
+    fn the_hit_should_offset_the_point() {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let mut shape = sphere();
+        shape.transform = translate(0., 0., 1.);
+
+        let xs = shape.intersect(&r);
+        let i = xs.iter().find(|x| x.t == 5.).unwrap();
+
+        assert!(i.over_point.unwrap().z < -1e-2 / 2.);
+        assert!(i.point.unwrap().z > i.over_point.unwrap().z);
     }
 
     #[bench]

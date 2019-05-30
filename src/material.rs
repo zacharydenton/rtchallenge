@@ -29,6 +29,7 @@ impl Material {
         point: &Tuple4,
         eyev: &Tuple4,
         normalv: &Tuple4,
+        in_shadow: bool,
     ) -> Color {
         // Combine the surface color with the light's color/intensity.
         let effective_color = self.color * light.intensity;
@@ -38,6 +39,11 @@ impl Material {
 
         // Compute and add the ambient contribution.
         let mut result = effective_color * self.ambient;
+
+        // Skip the diffuse and specular components if the point is in shadow.
+        if in_shadow {
+            return result;
+        }
 
         // light_dot_normal represents the cosine of the angle between the light
         // vector and the normal vector. A negative number means the light is on
@@ -85,7 +91,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv);
+        let result = m.lighting(&light, &position, &eyev, &normalv, false);
         assert_eq!(result, color(1.9, 1.9, 1.9));
     }
 
@@ -100,7 +106,7 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv);
+        let result = m.lighting(&light, &position, &eyev, &normalv, false);
         assert_eq!(result, color(1.0, 1.0, 1.0));
     }
 
@@ -111,7 +117,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 10., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv);
+        let result = m.lighting(&light, &position, &eyev, &normalv, false);
         assert_approx_eq!(result.r, 0.7364, 1e-5);
         assert_approx_eq!(result.g, 0.7364, 1e-5);
         assert_approx_eq!(result.b, 0.7364, 1e-5);
@@ -128,7 +134,7 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 10., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv);
+        let result = m.lighting(&light, &position, &eyev, &normalv, false);
         assert_approx_eq!(result.r, 1.6364, 1e-4);
         assert_approx_eq!(result.g, 1.6364, 1e-4);
         assert_approx_eq!(result.b, 1.6364, 1e-4);
@@ -141,7 +147,20 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., 10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv);
+        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        assert_approx_eq!(result.r, 0.1, 1e-5);
+        assert_approx_eq!(result.g, 0.1, 1e-5);
+        assert_approx_eq!(result.b, 0.1, 1e-5);
+    }
+
+    #[test]
+    fn lighting_with_the_surface_in_shadow() {
+        let m = material();
+        let position = point3(0., 0., 0.);
+        let eyev = vector3(0., 0., -1.);
+        let normalv = vector3(0., 0., -1.);
+        let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
+        let result = m.lighting(&light, &position, &eyev, &normalv, true);
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);

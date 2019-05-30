@@ -47,7 +47,7 @@ fn main() {
     world.objects.push(right_wall);
 
     let mut middle = sphere();
-    middle.transform = translate(-0.5, 1., 0.5);
+    middle.transform = scale(1., 0.5, 2.) * translate(-0.5, 1., 0.5);
     middle.material = material();
     middle.material.color = color(0.1, 1., 0.5);
     middle.material.diffuse = 0.7;
@@ -55,7 +55,8 @@ fn main() {
     world.objects.push(middle);
 
     let mut right = sphere();
-    right.transform = translate(1.5, 0.5, -0.5) * scale(0.5, 0.5, 0.5);
+    right.transform =
+        shear(-1., 1., 0., 0., 0., 0.) * translate(1.2, 1.5, 0.) * scale(1.4, 0.5, 0.5);
     right.material = material();
     right.material.color = color(0.5, 1., 0.1);
     right.material.diffuse = 0.7;
@@ -63,7 +64,7 @@ fn main() {
     world.objects.push(right);
 
     let mut left = sphere();
-    left.transform = translate(-1.5, 0.33, -0.75) * scale(0.33, 0.33, 0.33);
+    left.transform = scale(1., 2.5, 1.) * translate(-1.7, 0.33, -0.75) * scale(0.33, 0.33, 0.33);
     left.material = material();
     left.material.color = color(1., 0.8, 0.1);
     left.material.diffuse = 0.7;

@@ -5,6 +5,7 @@ use crate::tuple::*;
 
 #[derive(Debug, PartialEq)]
 pub enum Shape {
+    Plane {},
     Sphere {},
     TestShape {},
 }
@@ -14,6 +15,15 @@ pub struct Object {
     pub shape: Shape,
     pub transform: Matrix4,
     pub material: Material,
+}
+
+/// Constructs a plane centered at the origin (0, 0, 0).
+pub fn plane() -> Object {
+    Object {
+        shape: Shape::Plane {},
+        transform: I4,
+        material: material(),
+    }
 }
 
 /// Constructs a unit sphere centered at the origin (0, 0, 0).
@@ -70,6 +80,25 @@ impl Object {
         let transformed_ray = ray.transform(inverse_transform);
 
         match self.shape {
+            Shape::Plane {} => {
+                if transformed_ray.direction.y.abs() < 1e-2 {
+                    return vec![];
+                }
+
+                let t = -transformed_ray.origin.y / transformed_ray.direction.y;
+                vec![
+                    Intersection {
+                        t: t,
+                        object: self,
+                        point: None,
+                        over_point: None,
+                        eyev: None,
+                        normalv: None,
+                        inside: None,
+                    }
+                    .prepare(ray, inverse_transform),
+                ]
+            },
             Shape::Sphere {} => {
                 // The vector from the sphere's center, to the ray origin
                 // (remember: the sphere is centered at the world origin)
@@ -118,14 +147,29 @@ impl Object {
 
     /// Returns the surface normal at the given point.
     pub fn normal(&self, point: Tuple4) -> Tuple4 {
-        self.normal_inv(point, self.transform.inverse())
+        match self.shape {
+            Shape::Plane {} => {
+                vector3(0., 1., 0.)
+            },
+            _ => {
+                self.normal_inv(point, self.transform.inverse())
+            }
+        }
     }
 
     /// Returns the surface normal at the given point (with precalculated
     /// inverse transform).
     fn normal_inv(&self, point: Tuple4, inverse_transform: Matrix4) -> Tuple4 {
-        let object_point = inverse_transform * point;
-        let object_normal = object_point - point3(0., 0., 0.);
+        let object_normal = match self.shape {
+            Shape::Plane {} => {
+                vector3(0., 1., 0.)
+            },
+            _ => {
+                let object_point = inverse_transform * point;
+                object_point - point3(0., 0., 0.)
+            }
+        };
+
         let mut world_normal = inverse_transform.transpose() * object_normal;
         world_normal.w = 0.;
         world_normal.normalize()
@@ -304,6 +348,17 @@ mod tests {
     }
 
     #[test]
+    fn the_normal_of_a_plane_is_constant_everywhere() {
+        let p = plane();
+        let n1 = p.normal(point3(0., 0., 0.,));
+        let n2 = p.normal(point3(10., 0., -10.,));
+        let n3 = p.normal(point3(-5., 0., 150.,));
+        assert_eq!(n1, vector3(0., 1., 0.,));
+        assert_eq!(n2, vector3(0., 1., 0.,));
+        assert_eq!(n3, vector3(0., 1., 0.,));
+    }
+
+    #[test]
     fn the_normal_is_a_normalized_vector() {
         let s = sphere();
         let root3over3 = (3 as f32).sqrt() / 3.;
@@ -432,6 +487,42 @@ mod tests {
 
         assert!(i.over_point.unwrap().z < -1e-2 / 2.);
         assert!(i.point.unwrap().z > i.over_point.unwrap().z);
+    }
+
+    #[test]
+    fn intersect_with_a_ray_parallel_to_the_plane() {
+        let p = plane();
+        let r = ray(point3(0., 10., 0.), vector3(0., 0., 1.));
+        let xs = p.intersect(&r);
+        assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn intersect_with_a_coplanar_ray() {
+        let p = plane();
+        let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
+        let xs = p.intersect(&r);
+        assert_eq!(xs.len(), 0);
+    }
+
+    #[test]
+    fn a_ray_intersecting_a_plane_from_above() {
+        let p = plane();
+        let r = ray(point3(0., 1., 0.), vector3(0., -1., 0.));
+        let xs = p.intersect(&r);
+        assert_eq!(xs.len(), 1);
+        assert_eq!(xs[0].t, 1.);
+        assert_eq!(xs[0].object, &p);
+    }
+
+    #[test]
+    fn a_ray_intersecting_a_plane_from_below() {
+        let p = plane();
+        let r = ray(point3(0., -1., 0.), vector3(0., 1., 0.));
+        let xs = p.intersect(&r);
+        assert_eq!(xs.len(), 1);
+        assert_eq!(xs[0].t, 1.);
+        assert_eq!(xs[0].object, &p);
     }
 
     #[bench]

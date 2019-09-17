@@ -6,6 +6,7 @@ use crate::tuple::*;
 #[derive(Debug, PartialEq)]
 pub enum Shape {
     Sphere {},
+    TestShape {},
 }
 
 #[derive(Debug, PartialEq)]
@@ -64,13 +65,12 @@ pub type Intersections<'a> = Vec<Intersection<'a>>;
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
     pub fn intersect(&self, ray: &Ray) -> Intersections {
+        // Instead of transforming the object, apply the inverse transformation to the ray.
+        let inverse_transform = self.transform.inverse();
+        let transformed_ray = ray.transform(inverse_transform);
+
         match self.shape {
             Shape::Sphere {} => {
-                // Instead of transforming the sphere, apply the inverse
-                // transformation to the ray.
-                let inverse_transform = self.transform.inverse();
-                let transformed_ray = ray.transform(inverse_transform);
-
                 // The vector from the sphere's center, to the ray origin
                 // (remember: the sphere is centered at the world origin)
                 let sphere_to_ray = transformed_ray.origin - point3(0., 0., 0.);
@@ -110,28 +110,25 @@ impl Object {
                     ]
                 }
             }
+            Shape::TestShape {} => {
+                vec![]
+            }
         }
     }
 
     /// Returns the surface normal at the given point.
     pub fn normal(&self, point: Tuple4) -> Tuple4 {
-        match self.shape {
-            Shape::Sphere {} => self.normal_inv(point, self.transform.inverse()),
-        }
+        self.normal_inv(point, self.transform.inverse())
     }
 
     /// Returns the surface normal at the given point (with precalculated
     /// inverse transform).
     fn normal_inv(&self, point: Tuple4, inverse_transform: Matrix4) -> Tuple4 {
-        match self.shape {
-            Shape::Sphere {} => {
-                let object_point = inverse_transform * point;
-                let object_normal = object_point - point3(0., 0., 0.);
-                let mut world_normal = inverse_transform.transpose() * object_normal;
-                world_normal.w = 0.;
-                world_normal.normalize()
-            }
-        }
+        let object_point = inverse_transform * point;
+        let object_normal = object_point - point3(0., 0., 0.);
+        let mut world_normal = inverse_transform.transpose() * object_normal;
+        world_normal.w = 0.;
+        world_normal.normalize()
     }
 }
 
@@ -159,6 +156,14 @@ mod tests {
             eyev: None,
             normalv: None,
             inside: None,
+        }
+    }
+
+    fn test_object() -> Object {
+        Object {
+            shape: Shape::TestShape {},
+            transform: I4,
+            material: material(),
         }
     }
 
@@ -219,28 +224,28 @@ mod tests {
     }
 
     #[test]
-    fn a_spheres_default_transformation() {
-        let s = sphere();
-        assert_eq!(s.transform, I4);
+    fn an_objects_default_transformation() {
+        let o = test_object();
+        assert_eq!(o.transform, I4);
     }
 
     #[test]
-    fn changing_a_spheres_transformation() {
-        let mut s = sphere();
+    fn changing_an_objects_transformation() {
+        let mut o = test_object();
         let t = translate(2., 3., 4.);
-        s.transform = t;
-        assert_eq!(s.transform, t);
+        o.transform = t;
+        assert_eq!(o.transform, t);
     }
 
     #[test]
-    fn a_sphere_has_a_default_material() {
-        let s = sphere();
+    fn an_object_has_a_default_material() {
+        let s = test_object();
         assert_eq!(s.material, material());
     }
 
     #[test]
-    fn a_sphere_may_be_assigned_a_material() {
-        let mut s = sphere();
+    fn an_object_may_be_assigned_a_material() {
+        let mut s = test_object();
         let mut m = material();
         m.ambient = 1.;
         s.material = m;

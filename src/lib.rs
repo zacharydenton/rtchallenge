@@ -9,6 +9,7 @@ pub mod light;
 pub mod material;
 pub mod matrix;
 pub mod object;
+pub mod pattern;
 pub mod ppm;
 pub mod ray;
 pub mod transform;

@@ -1,5 +1,6 @@
 use crate::color::*;
 use crate::light::*;
+use crate::pattern::*;
 use crate::tuple::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -9,6 +10,7 @@ pub struct Material {
     pub diffuse: f32,
     pub specular: f32,
     pub shininess: f32,
+    pub pattern: Option<Pattern>,
 }
 
 pub fn material() -> Material {
@@ -18,6 +20,7 @@ pub fn material() -> Material {
         diffuse: 0.9,
         specular: 0.9,
         shininess: 200.0,
+        pattern: None,
     }
 }
 
@@ -31,8 +34,17 @@ impl Material {
         normalv: &Tuple4,
         in_shadow: bool,
     ) -> Color {
+        let base_color = match self.pattern {
+            Some(pattern) => {
+                pattern.at(*point)
+            },
+            None => {
+                self.color
+            }
+        };
+
         // Combine the surface color with the light's color/intensity.
-        let effective_color = self.color * light.intensity;
+        let effective_color = base_color * light.intensity;
 
         // Find the direction to the light source.
         let lightv = (light.position - *point).normalize();
@@ -164,5 +176,21 @@ mod tests {
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);
+    }
+
+    #[test]
+    fn lighting_with_a_pattern_applied() {
+        let mut m = material();
+        m.pattern = Some(stripe_pattern(color(1., 1., 1.), color(0., 0., 0.)));
+        m.ambient = 1.0;
+        m.diffuse = 0.0;
+        m.specular = 0.0;
+        let eyev = vector3(0., 0., -1.);
+        let normalv = vector3(0., 0., -1.0);
+        let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
+        let c1 = m.lighting(&light, &point3(0.9, 0., 0.), &eyev, &normalv, false);
+        let c2 = m.lighting(&light, &point3(1.1, 0., 0.), &eyev, &normalv, false);
+        assert_eq!(c1, color(1., 1., 1.));
+        assert_eq!(c2, color(0., 0., 0.));
     }
 }

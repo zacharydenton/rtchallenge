@@ -6,7 +6,8 @@ use crate::tuple::*;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PatternSpec {
     Stripe(Color, Color),
-    Gradient(Color, Color),
+    LinearGradient(Color, Color),
+    RadialGradient(Color, Color),
     Ring(Color, Color),
     Checkers(Color, Color),
 }
@@ -28,9 +29,9 @@ impl Pattern {
                     b
                 }
             },
-            PatternSpec::Gradient(a, b) => {
+            PatternSpec::LinearGradient(a, b) => {
                 let distance = b - a;
-                let fraction = point.x - point.x.floor();
+                let fraction = point.x.fract();
                 a + distance * fraction
             },
             PatternSpec::Ring(a, b) => {
@@ -46,7 +47,12 @@ impl Pattern {
                 } else {
                     b
                 }
-            }
+            },
+            PatternSpec::RadialGradient(a, b) => {
+                let distance = b - a;
+                let fraction = (point.x * point.x + point.z * point.z).sqrt().fract();
+                a + distance * fraction
+            },
         }
     }
 
@@ -65,9 +71,9 @@ pub fn stripe_pattern(a: Color, b: Color) -> Pattern {
     }
 }
 
-pub fn gradient_pattern(a: Color, b: Color) -> Pattern {
+pub fn linear_gradient_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
-        spec: PatternSpec::Gradient(a, b),
+        spec: PatternSpec::LinearGradient(a, b),
         transform: I4,
     }
 }
@@ -86,9 +92,17 @@ pub fn checkers_pattern(a: Color, b: Color) -> Pattern {
     }
 }
 
+pub fn radial_gradient_pattern(a: Color, b: Color) -> Pattern {
+    Pattern {
+        spec: PatternSpec::RadialGradient(a, b),
+        transform: I4,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_approx_eq::assert_approx_eq;
     use crate::transform::*;
 
     fn white() -> Color {
@@ -167,7 +181,7 @@ mod tests {
 
     #[test]
     fn a_gradient_linearly_interpolates_between_colors() {
-        let pattern = gradient_pattern(white(), black());
+        let pattern = linear_gradient_pattern(white(), black());
         assert_eq!(pattern.at(point3(0., 0., 0.)), white());
         assert_eq!(pattern.at(point3(0.25, 0., 0.)), color(0.75, 0.75, 0.75));
         assert_eq!(pattern.at(point3(0.5, 0., 0.)), color(0.5, 0.5, 0.5));
@@ -206,4 +220,38 @@ mod tests {
         assert_eq!(pattern.at(point3(0., 0., 0.99)), white());
         assert_eq!(pattern.at(point3(0., 0., 1.01)), black());
     }
+
+    #[test]
+    fn a_radial_gradient_should_interpolate_in_both_x_and_z() {
+        let pattern = radial_gradient_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0.25, 0., 0.)), color(0.75, 0.75, 0.75));
+        assert_eq!(pattern.at(point3(0.5, 0., 0.)), color(0.5, 0.5, 0.5));
+        assert_eq!(pattern.at(point3(0.75, 0., 0.)), color(0.25, 0.25, 0.25));
+        assert_eq!(pattern.at(point3(0., 0., 0.25)), color(0.75, 0.75, 0.75));
+        assert_eq!(pattern.at(point3(0., 0., 0.5)), color(0.5, 0.5, 0.5));
+        assert_eq!(pattern.at(point3(0., 0., 0.75)), color(0.25, 0.25, 0.25));
+
+        let c1 = pattern.at(point3(0.25 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.25 * std::f32::consts::FRAC_1_SQRT_2));
+        let c2 = pattern.at(point3(0.5 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.5 * std::f32::consts::FRAC_1_SQRT_2));
+        let c3 = pattern.at(point3(0.75 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.75 * std::f32::consts::FRAC_1_SQRT_2));
+        let c4 = pattern.at(point3(std::f32::consts::FRAC_1_SQRT_2, 0., std::f32::consts::FRAC_1_SQRT_2));
+
+        assert_approx_eq!(c1.r, 0.75);
+        assert_approx_eq!(c1.g, 0.75);
+        assert_approx_eq!(c1.b, 0.75);
+
+        assert_approx_eq!(c2.r, 0.5);
+        assert_approx_eq!(c2.g, 0.5);
+        assert_approx_eq!(c2.b, 0.5);
+
+        assert_approx_eq!(c3.r, 0.25);
+        assert_approx_eq!(c3.g, 0.25);
+        assert_approx_eq!(c3.b, 0.25);
+
+        assert_approx_eq!(c4.r, 0.);
+        assert_approx_eq!(c4.g, 0.);
+        assert_approx_eq!(c4.b, 0.);
+    }
+
 }

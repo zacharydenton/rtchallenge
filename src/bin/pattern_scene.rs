@@ -25,51 +25,57 @@ fn main() {
 
     let mut floor = plane();
     let mut floor_material = material();
-    let mut floor_pattern = ring_pattern(color(1., 1., 1.), color(0.1, 0.1, 0.9));
-    floor_pattern.transform = scale(0.2, 0.2, 0.2);
+    let mut floor_pattern = radial_gradient_pattern(color(0.9, 0.1, 0.6), color(0.1, 0.1, 0.3));
+    floor_pattern.transform = scale(2., 2., 2.);
     floor_material.pattern = Some(floor_pattern);
-    floor_material.specular = 0.;
+    floor_material.specular = 0.1;
     floor.material = floor_material;
     world.objects.push(floor);
+
+    let mut wall_material = material();
+    let mut wall_pattern = ring_pattern(color(1., 1., 1.), color(0.1, 0.1, 0.9));
+    wall_pattern.transform = scale(0.2, 0.2, 0.2);
+    wall_material.specular = 0.2;
+    wall_material.pattern = Some(wall_pattern);
 
     let mut back_wall = plane();
     back_wall.transform = translate(0., 0., 1.5)
         * rotate_x(std::f32::consts::FRAC_PI_2);
-    back_wall.material = floor_material;
+    back_wall.material = wall_material;
     world.objects.push(back_wall);
 
     let mut front_wall = plane();
     front_wall.transform = translate(0., 0., -1.5)
         * rotate_x(-std::f32::consts::FRAC_PI_2);
-    front_wall.material = floor_material;
+    front_wall.material = wall_material;
     world.objects.push(front_wall);
 
     let mut left_wall = plane();
     left_wall.transform = translate(0., 0., 2.2)
         * rotate_y(-std::f32::consts::FRAC_PI_4)
         * rotate_x(std::f32::consts::FRAC_PI_2);
-    left_wall.material = floor_material;
+    left_wall.material = wall_material;
     world.objects.push(left_wall);
 
     let mut left_wall2 = plane();
     left_wall2.transform = translate(0., 0., -2.2)
         * rotate_y(std::f32::consts::FRAC_PI_4)
         * rotate_x(-std::f32::consts::FRAC_PI_2);
-    left_wall2.material = floor_material;
+    left_wall2.material = wall_material;
     world.objects.push(left_wall2);
 
     let mut right_wall = plane();
     right_wall.transform = translate(0., 0., 2.2)
         * rotate_y(std::f32::consts::FRAC_PI_4)
         * rotate_x(std::f32::consts::FRAC_PI_2);
-    right_wall.material = floor_material;
+    right_wall.material = wall_material;
     world.objects.push(right_wall);
 
     let mut right_wall2 = plane();
     right_wall2.transform = translate(0., 0., -2.2)
         * rotate_y(-std::f32::consts::FRAC_PI_4)
         * rotate_x(-std::f32::consts::FRAC_PI_2);
-    right_wall2.material = floor_material;
+    right_wall2.material = wall_material;
     world.objects.push(right_wall2);
 
     let mut middle = sphere();
@@ -86,7 +92,7 @@ fn main() {
     right.transform =
         translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5) * rotate_y(2.) * rotate_z(1.35);
     right.material = material();
-    let right_pattern = gradient_pattern(color(1.0, 0.1, 0.2), color(0.1, 0.4, 0.9));
+    let right_pattern = linear_gradient_pattern(color(1.0, 0.1, 0.2), color(0.1, 0.4, 0.9));
     right.material.pattern = Some(right_pattern);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;

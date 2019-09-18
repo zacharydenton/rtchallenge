@@ -6,6 +6,9 @@ use crate::tuple::*;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PatternSpec {
     Stripe(Color, Color),
+    Gradient(Color, Color),
+    Ring(Color, Color),
+    Checkers(Color, Color),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -20,6 +23,25 @@ impl Pattern {
         match self.spec {
             PatternSpec::Stripe(a, b) => {
                 if point.x.floor() as i32 % 2 == 0 {
+                    a
+                } else {
+                    b
+                }
+            },
+            PatternSpec::Gradient(a, b) => {
+                let distance = b - a;
+                let fraction = point.x - point.x.floor();
+                a + distance * fraction
+            },
+            PatternSpec::Ring(a, b) => {
+                if (point.x * point.x + point.z * point.z).sqrt().floor() as i32 % 2 == 0 {
+                    a
+                } else {
+                    b
+                }
+            },
+            PatternSpec::Checkers(a, b) => {
+                if (point.x.floor() + point.y.floor() + point.z.floor()) as i32 % 2 == 0 {
                     a
                 } else {
                     b
@@ -43,6 +65,27 @@ pub fn stripe_pattern(a: Color, b: Color) -> Pattern {
     }
 }
 
+pub fn gradient_pattern(a: Color, b: Color) -> Pattern {
+    Pattern {
+        spec: PatternSpec::Gradient(a, b),
+        transform: I4,
+    }
+}
+
+pub fn ring_pattern(a: Color, b: Color) -> Pattern {
+    Pattern {
+        spec: PatternSpec::Ring(a, b),
+        transform: I4,
+    }
+}
+
+pub fn checkers_pattern(a: Color, b: Color) -> Pattern {
+    Pattern {
+        spec: PatternSpec::Checkers(a, b),
+        transform: I4,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -59,9 +102,12 @@ mod tests {
     #[test]
     fn creating_a_stripe_pattern() {
         let pattern = stripe_pattern(white(), black());
-        let PatternSpec::Stripe(a, b) = pattern.spec;
-        assert_eq!(a, white());
-        assert_eq!(b, black());
+        if let PatternSpec::Stripe(a, b) = pattern.spec {
+            assert_eq!(a, white());
+            assert_eq!(b, black());
+        } else {
+            panic!();
+        }
     }
 
     #[test]
@@ -117,5 +163,47 @@ mod tests {
         pattern.transform = translate(0.5, 0., 0.);
         let c = pattern.at_object(&object, point3(2.5, 0., 0.));
         assert_eq!(c, white());
+    }
+
+    #[test]
+    fn a_gradient_linearly_interpolates_between_colors() {
+        let pattern = gradient_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0.25, 0., 0.)), color(0.75, 0.75, 0.75));
+        assert_eq!(pattern.at(point3(0.5, 0., 0.)), color(0.5, 0.5, 0.5));
+        assert_eq!(pattern.at(point3(0.75, 0., 0.)), color(0.25, 0.25, 0.25));
+    }
+
+    #[test]
+    fn a_ring_should_extend_in_both_x_and_z() {
+        let pattern = ring_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(1., 0., 0.)), black());
+        assert_eq!(pattern.at(point3(0., 0., 1.)), black());
+        assert_eq!(pattern.at(point3(0.708, 0., 0.708)), black());
+    }
+
+    #[test]
+    fn checkers_should_repeat_in_x() {
+        let pattern = checkers_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0.99, 0., 0.)), white());
+        assert_eq!(pattern.at(point3(1.01, 0., 0.)), black());
+    }
+
+    #[test]
+    fn checkers_should_repeat_in_y() {
+        let pattern = checkers_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0., 0.99, 0.)), white());
+        assert_eq!(pattern.at(point3(0., 1.01, 0.)), black());
+    }
+
+    #[test]
+    fn checkers_should_repeat_in_z() {
+        let pattern = checkers_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0., 0., 0.99)), white());
+        assert_eq!(pattern.at(point3(0., 0., 1.01)), black());
     }
 }

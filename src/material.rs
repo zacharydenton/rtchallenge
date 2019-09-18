@@ -1,5 +1,6 @@
 use crate::color::*;
 use crate::light::*;
+use crate::object::*;
 use crate::pattern::*;
 use crate::tuple::*;
 
@@ -28,6 +29,7 @@ impl Material {
     /// Computes the color of the surface at the given point.
     pub fn lighting(
         &self,
+        object: &Object,
         light: &Light,
         point: &Tuple4,
         eyev: &Tuple4,
@@ -36,7 +38,7 @@ impl Material {
     ) -> Color {
         let base_color = match self.pattern {
             Some(pattern) => {
-                pattern.at(*point)
+                pattern.at_object(object, *point)
             },
             None => {
                 self.color
@@ -103,7 +105,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, false);
         assert_eq!(result, color(1.9, 1.9, 1.9));
     }
 
@@ -118,7 +120,7 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, false);
         assert_eq!(result, color(1.0, 1.0, 1.0));
     }
 
@@ -129,7 +131,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 10., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, false);
         assert_approx_eq!(result.r, 0.7364, 1e-5);
         assert_approx_eq!(result.g, 0.7364, 1e-5);
         assert_approx_eq!(result.b, 0.7364, 1e-5);
@@ -146,7 +148,7 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 10., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, false);
         assert_approx_eq!(result.r, 1.6364, 1e-4);
         assert_approx_eq!(result.g, 1.6364, 1e-4);
         assert_approx_eq!(result.b, 1.6364, 1e-4);
@@ -159,7 +161,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., 10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, false);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, false);
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);
@@ -172,7 +174,7 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let result = m.lighting(&light, &position, &eyev, &normalv, true);
+        let result = m.lighting(&sphere(), &light, &position, &eyev, &normalv, true);
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);
@@ -188,8 +190,8 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.0);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let c1 = m.lighting(&light, &point3(0.9, 0., 0.), &eyev, &normalv, false);
-        let c2 = m.lighting(&light, &point3(1.1, 0., 0.), &eyev, &normalv, false);
+        let c1 = m.lighting(&sphere(), &light, &point3(0.9, 0., 0.), &eyev, &normalv, false);
+        let c2 = m.lighting(&sphere(), &light, &point3(1.1, 0., 0.), &eyev, &normalv, false);
         assert_eq!(c1, color(1., 1., 1.));
         assert_eq!(c2, color(0., 0., 0.));
     }

@@ -147,14 +147,7 @@ impl Object {
 
     /// Returns the surface normal at the given point.
     pub fn normal(&self, point: Tuple4) -> Tuple4 {
-        match self.shape {
-            Shape::Plane {} => {
-                vector3(0., 1., 0.)
-            },
-            _ => {
-                self.normal_inv(point, self.transform.inverse())
-            }
-        }
+        self.normal_inv(point, self.transform.inverse())
     }
 
     /// Returns the surface normal at the given point (with precalculated

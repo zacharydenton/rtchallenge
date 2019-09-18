@@ -37,7 +37,7 @@ fn main() {
                 }) => {
                     let color = object
                         .material
-                        .lighting(&light, &point, &eyev, &normalv, false);
+                        .lighting(&object, &light, &point, &eyev, &normalv, false);
                     let x = (canvas.width as f32 / 2. + target.x * canvas.width as f32 / 2.).round()
                         as usize;
                     let y = (canvas.height as f32 / 2. - target.y * canvas.height as f32 / 2.)

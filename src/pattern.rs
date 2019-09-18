@@ -1,5 +1,6 @@
 use crate::color::*;
 use crate::matrix::*;
+use crate::object::*;
 use crate::tuple::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -26,6 +27,13 @@ impl Pattern {
             }
         }
     }
+
+    /// Returns the pattern's color on the given object at the given point in world space.
+    pub fn at_object(&self, object: &Object, point: Tuple4) -> Color {
+        let object_point = object.transform.inverse() * point;
+        let pattern_point = self.transform.inverse() * object_point;
+        self.at(pattern_point)
+    }
 }
 
 pub fn stripe_pattern(a: Color, b: Color) -> Pattern {
@@ -38,6 +46,7 @@ pub fn stripe_pattern(a: Color, b: Color) -> Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::transform::*;
 
     fn white() -> Color {
         color(1., 1., 1.,)
@@ -80,5 +89,33 @@ mod tests {
         assert_eq!(pattern.at(point3(-0.1, 0., 0.)), black());
         assert_eq!(pattern.at(point3(-1.0, 0., 0.)), black());
         assert_eq!(pattern.at(point3(-1.1, 0., 0.)), white());
+    }
+
+    #[test]
+    fn stripes_with_an_object_transformation() {
+        let mut object = sphere();
+        object.transform = scale(2., 2., 2.);
+        let pattern = stripe_pattern(white(), black());
+        let c = pattern.at_object(&object, point3(1.5, 0., 0.));
+        assert_eq!(c, white());
+    }
+
+    #[test]
+    fn stripes_with_a_pattern_transformation() {
+        let object = sphere();
+        let mut pattern = stripe_pattern(white(), black());
+        pattern.transform = scale(2., 2., 2.);
+        let c = pattern.at_object(&object, point3(1.5, 0., 0.));
+        assert_eq!(c, white());
+    }
+
+    #[test]
+    fn stripes_with_both_an_object_and_a_pattern_transformation() {
+        let mut object = sphere();
+        object.transform = scale(2., 2., 2.);
+        let mut pattern = stripe_pattern(white(), black());
+        pattern.transform = translate(0.5, 0., 0.);
+        let c = pattern.at_object(&object, point3(2.5, 0., 0.));
+        assert_eq!(c, white());
     }
 }

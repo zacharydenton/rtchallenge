@@ -56,6 +56,7 @@ impl World {
             .iter()
             .map(|light| {
                 intersection.object.material.lighting(
+                    &intersection.object,
                     light,
                     &intersection.point.unwrap(),
                     &intersection.eyev.unwrap(),

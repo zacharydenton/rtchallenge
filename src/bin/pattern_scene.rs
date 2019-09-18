@@ -25,8 +25,8 @@ fn main() {
 
     let mut floor = plane();
     let mut floor_material = material();
-    let mut floor_pattern = stripe_pattern(color(1., 1., 1.), color(0.1, 0.1, 0.9));
-    floor_pattern.transform = scale(0.5, 1., 1.) * rotate_y(std::f32::consts::FRAC_PI_2);
+    let mut floor_pattern = ring_pattern(color(1., 1., 1.), color(0.1, 0.1, 0.9));
+    floor_pattern.transform = scale(0.2, 0.2, 0.2);
     floor_material.pattern = Some(floor_pattern);
     floor_material.specular = 0.;
     floor.material = floor_material;
@@ -75,8 +75,8 @@ fn main() {
     let mut middle = sphere();
     middle.transform = scale(0.8, 0.8, 0.8) * translate(-0.5, 1., 0.5) * rotate_z(std::f32::consts::FRAC_PI_2);
     middle.material = material();
-    let mut middle_pattern = stripe_pattern(color(0.1, 1., 0.5), color(1., 1., 1.));
-    middle_pattern.transform =  translate(0.12, 0., 0.) * scale(0.1, 1., 1.);
+    let mut middle_pattern = checkers_pattern(color(0.1, 1., 0.5), color(1., 1., 1.));
+    middle_pattern.transform = scale(0.5, 0.5, 0.5);
     middle.material.pattern = Some(middle_pattern);
     middle.material.diffuse = 0.7;
     middle.material.specular = 0.3;
@@ -84,10 +84,9 @@ fn main() {
 
     let mut right = sphere();
     right.transform =
-        translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5) * rotate_y(std::f32::consts::FRAC_PI_4);
+        translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5) * rotate_y(2.) * rotate_z(1.35);
     right.material = material();
-    let mut right_pattern = stripe_pattern(color(0.5, 1., 0.1), color(0.1, 0.7, 0.7));
-    right_pattern.transform = scale(0.07, 1., 1.);
+    let right_pattern = gradient_pattern(color(1.0, 0.1, 0.2), color(0.1, 0.4, 0.9));
     right.material.pattern = Some(right_pattern);
     right.material.diffuse = 0.7;
     right.material.specular = 0.3;

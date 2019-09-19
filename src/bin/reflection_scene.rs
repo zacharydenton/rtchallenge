@@ -50,17 +50,19 @@ fn main() {
     world.objects.push(right_wall);
 
     let mut middle = sphere();
-    middle.transform = translate(-0.5, 1., 0.5);
+    middle.transform = translate(0.5, 1., -1.1);
     middle.material = material();
     middle.material.color = color(0.5, 0.5, 0.5);
     middle.material.diffuse = 0.3;
-    middle.material.specular = 0.15;
-    middle.material.shininess = 1000.;
-    middle.material.reflective = 0.7;
+    middle.material.specular = 1.0;
+    middle.material.shininess = 400.;
+    middle.material.reflective = 0.9;
+    middle.material.transparency = 0.9;
+    middle.material.refractive_index = 1.5;
     world.objects.push(middle);
 
     let mut right = sphere();
-    right.transform = translate(1.2, 1.5, 0.) * scale(0.5, 0.5, 0.5);
+    right.transform = translate(1.2, 1.5, -0.75) * scale(0.5, 0.5, 0.5);
     right.material = material();
     right.material.color = color(0.5, 1., 0.1);
     right.material.diffuse = 0.7;
@@ -69,7 +71,7 @@ fn main() {
     world.objects.push(right);
 
     let mut left = sphere();
-    left.transform = translate(-0.9, 0.33, -0.75) * scale(0.25, 0.25, 0.25);
+    left.transform = translate(-0.9, 0.33, -1.25) * scale(0.25, 0.25, 0.25);
     left.material = material();
     left.material.color = color(1., 0.2, 0.1);
     left.material.diffuse = 0.7;
@@ -78,13 +80,22 @@ fn main() {
     world.objects.push(left);
 
     let mut left2 = sphere();
-    left2.transform = translate(-0.3, 1.73, -0.95) * scale(0.35, 0.35, 0.35);
+    left2.transform = translate(-0.3, 1.73, -1.95) * scale(0.35, 0.35, 0.35);
     left2.material = material();
     left2.material.color = color(0.2, 0.1, 1.0);
     left2.material.diffuse = 0.7;
     left2.material.specular = 0.3;
     left2.material.reflective = 0.2;
     world.objects.push(left2);
+
+    let mut back = sphere();
+    back.transform = translate(0.5, 0.73, 0.15) * scale(0.35, 0.35, 0.35);
+    back.material = material();
+    back.material.color = color(0.2, 0.1, 1.0);
+    back.material.diffuse = 0.7;
+    back.material.specular = 0.3;
+    back.material.reflective = 0.2;
+    world.objects.push(back);
 
     let canvas = camera.render(&world);
     print!("{}", canvas_to_ppm(canvas));

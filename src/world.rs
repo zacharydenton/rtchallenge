@@ -8,12 +8,14 @@ use crate::tuple::*;
 pub struct World {
     pub objects: Vec<Object>,
     pub lights: Vec<Light>,
+    pub max_reflections: i32,
 }
 
 pub fn world() -> World {
     World {
         objects: vec![],
         lights: vec![],
+        max_reflections: 5,
     }
 }
 
@@ -31,6 +33,7 @@ pub fn default_world() -> World {
     World {
         objects: vec![s1, s2],
         lights: vec![light],
+        max_reflections: 5,
     }
 }
 
@@ -51,8 +54,9 @@ impl World {
     }
 
     /// Returns the color at the given intersection.
-    pub fn shade(&self, intersection: &Intersection) -> Color {
-        self.lights
+    pub fn shade(&self, intersection: &Intersection, remaining: i32) -> Color {
+        let surface = self
+            .lights
             .iter()
             .map(|light| {
                 intersection.object.material.lighting(
@@ -64,19 +68,27 @@ impl World {
                     self.is_shadowed(intersection.over_point.unwrap()),
                 )
             })
-            .fold(color(0., 0., 0.), |acc, x| acc + x)
+            .fold(color(0., 0., 0.), |acc, x| acc + x);
+
+        let reflection = self.reflected_color(intersection, remaining);
+
+        surface + reflection
     }
 
     /// Intersects the ray with the world and returns the color at the resulting
     /// intersection.
     pub fn color_at(&self, ray: &Ray) -> Color {
+        self.color_at_remaining(ray, self.max_reflections).clamp()
+    }
+
+    fn color_at_remaining(&self, ray: &Ray, remaining: i32) -> Color {
         let intersections = self.intersect(ray);
 
         if intersections.len() == 0 {
             return color(0., 0., 0.);
         }
 
-        self.shade(&intersections[0])
+        self.shade(&intersections[0], remaining)
     }
 
     /// Whether the given point is considered to be in shadow.
@@ -91,6 +103,22 @@ impl World {
         let intersections = self.intersect(&r);
 
         intersections.len() > 0 && intersections[0].t < distance
+    }
+
+    /// Returns the color of the reflection at the given intersection.
+    ///
+    /// Will only cast reflection rays if there is remaining depth.
+    pub fn reflected_color(&self, intersection: &Intersection, remaining: i32) -> Color {
+        if intersection.object.material.reflective > 0. && remaining > 0 {
+            let reflect_ray = ray(
+                intersection.over_point.unwrap(),
+                intersection.reflectv.unwrap(),
+            );
+            let reflect_color = self.color_at_remaining(&reflect_ray, remaining - 1);
+            reflect_color * intersection.object.material.reflective
+        } else {
+            color(0., 0., 0.)
+        }
     }
 }
 
@@ -132,7 +160,7 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let xs = w.intersect(&r);
         let i = xs.iter().find(|x| x.t == 4.).unwrap();
-        let c = w.shade(&i);
+        let c = w.shade(&i, 1);
 
         assert_approx_eq!(c.r, 0.38066, 1e-5);
         assert_approx_eq!(c.g, 0.47583, 1e-5);
@@ -146,7 +174,7 @@ mod tests {
         let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
         let xs = w.intersect(&r);
         let i = xs.iter().find(|x| x.t == 0.5).unwrap();
-        let c = w.shade(&i);
+        let c = w.shade(&i, 1);
 
         assert_approx_eq!(c.r, 0.90498, 1e-5);
         assert_approx_eq!(c.g, 0.90498, 1e-5);
@@ -229,11 +257,119 @@ mod tests {
 
         let xs = w.intersect(&r);
         let i = xs.iter().find(|x| x.t == 4.).unwrap();
-        let c = w.shade(&i);
+        let c = w.shade(&i, 1);
 
         assert_approx_eq!(c.r, 0.1, 1e-5);
         assert_approx_eq!(c.g, 0.1, 1e-5);
         assert_approx_eq!(c.b, 0.1, 1e-5);
+    }
+
+    #[test]
+    fn the_reflected_color_for_a_nonreflective_material() {
+        let mut w = default_world();
+        let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
+        let mut shape = &mut w.objects[1];
+        shape.material.ambient = 1.0;
+        let xs = w.intersect(&r);
+        let i = xs.iter().find(|x| x.t == 1.).unwrap();
+        assert_eq!(w.reflected_color(&i, 1), color(0., 0., 0.));
+    }
+
+    #[test]
+    fn the_reflected_color_for_a_reflective_material() {
+        let mut w = default_world();
+        let mut shape = plane();
+        shape.material.reflective = 0.5;
+        shape.transform = translate(0., -1., 0.);
+        w.objects.push(shape);
+        let r = ray(
+            point3(0., 0., -3.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
+        let xs = w.intersect(&r);
+        let i = xs
+            .iter()
+            .find(|x| (x.t - std::f32::consts::SQRT_2).abs() < 1e-2)
+            .unwrap();
+        let reflected = w.reflected_color(&i, 1);
+        assert_approx_eq!(reflected.r, 0.19032, 1e-2);
+        assert_approx_eq!(reflected.g, 0.2379, 1e-2);
+        assert_approx_eq!(reflected.b, 0.14274, 1e-2);
+    }
+
+    #[test]
+    fn shade_hit_with_a_reflective_material() {
+        let mut w = default_world();
+        let mut shape = plane();
+        shape.material.reflective = 0.5;
+        shape.transform = translate(0., -1., 0.);
+        w.objects.push(shape);
+        let r = ray(
+            point3(0., 0., -3.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
+        let xs = w.intersect(&r);
+        let i = xs
+            .iter()
+            .find(|x| (x.t - std::f32::consts::SQRT_2).abs() < 1e-2)
+            .unwrap();
+        let c = w.shade(&i, 1);
+        assert_approx_eq!(c.r, 0.87677, 1e-2);
+        assert_approx_eq!(c.g, 0.92436, 1e-2);
+        assert_approx_eq!(c.b, 0.82918, 1e-2);
+    }
+
+    #[test]
+    fn color_at_with_mutually_reflective_surfaces() {
+        let mut w = world();
+        w.lights
+            .push(point_light(point3(0., 0., 0.), color(1., 1., 1.)));
+
+        let mut lower = plane();
+        lower.material.reflective = 1.;
+        lower.transform = translate(0., -1., 0.);
+        w.objects.push(lower);
+
+        let mut upper = plane();
+        upper.material.reflective = 1.;
+        upper.transform = translate(0., 1., 0.);
+        w.objects.push(upper);
+
+        let r = ray(point3(0., 0., 0.), vector3(0., 1., 0.));
+        let c = w.color_at(&r);
+        assert_eq!(c.r, 1.);
+    }
+
+    #[test]
+    fn the_reflected_color_at_the_maximum_recursive_depth() {
+        let mut w = default_world();
+        let mut shape = plane();
+        shape.material.reflective = 0.5;
+        shape.transform = translate(0., -1., 0.);
+        w.objects.push(shape);
+        let r = ray(
+            point3(0., 0., -3.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
+        let xs = w.intersect(&r);
+        let i = xs
+            .iter()
+            .find(|x| (x.t - std::f32::consts::SQRT_2).abs() < 1e-2)
+            .unwrap();
+        let c = w.reflected_color(&i, 0);
+        assert_eq!(c, color(0., 0., 0.));
     }
 
     #[bench]
@@ -249,6 +385,6 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         let xs = w.intersect(&r);
         let i = xs.iter().find(|x| x.t == 4.).unwrap();
-        bencher.iter(|| w.shade(&i));
+        bencher.iter(|| w.shade(&i, 1));
     }
 }

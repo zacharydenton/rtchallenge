@@ -39,14 +39,12 @@ fn main() {
     wall_material.pattern = Some(wall_pattern);
 
     let mut back_wall = plane();
-    back_wall.transform = translate(0., 0., 1.5)
-        * rotate_x(std::f32::consts::FRAC_PI_2);
+    back_wall.transform = translate(0., 0., 1.5) * rotate_x(std::f32::consts::FRAC_PI_2);
     back_wall.material = wall_material;
     world.objects.push(back_wall);
 
     let mut front_wall = plane();
-    front_wall.transform = translate(0., 0., -1.5)
-        * rotate_x(-std::f32::consts::FRAC_PI_2);
+    front_wall.transform = translate(0., 0., -1.5) * rotate_x(-std::f32::consts::FRAC_PI_2);
     front_wall.material = wall_material;
     world.objects.push(front_wall);
 
@@ -79,7 +77,8 @@ fn main() {
     world.objects.push(right_wall2);
 
     let mut middle = sphere();
-    middle.transform = scale(0.8, 0.8, 0.8) * translate(-0.5, 1., 0.5) * rotate_z(std::f32::consts::FRAC_PI_2);
+    middle.transform =
+        scale(0.8, 0.8, 0.8) * translate(-0.5, 1., 0.5) * rotate_z(std::f32::consts::FRAC_PI_2);
     middle.material = material();
     let mut middle_pattern = checkers_pattern(color(0.1, 1., 0.5), color(1., 1., 1.));
     middle_pattern.transform = scale(0.5, 0.5, 0.5);

@@ -7,6 +7,17 @@ pub struct Color {
     pub b: f32,
 }
 
+impl Color {
+    /// Clamps each color component to the range [0, 1].
+    pub fn clamp(&self) -> Color {
+        color(
+            self.r.min(1.).max(0.),
+            self.g.min(1.).max(0.),
+            self.b.min(1.).max(0.),
+        )
+    }
+}
+
 /// Constructs a Color.
 pub fn color(r: f32, g: f32, b: f32) -> Color {
     Color { r, g, b }

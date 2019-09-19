@@ -43,6 +43,7 @@ pub struct Intersection<'a> {
     pub over_point: Option<Tuple4>,
     pub eyev: Option<Tuple4>,
     pub normalv: Option<Tuple4>,
+    pub reflectv: Option<Tuple4>,
     pub inside: Option<bool>,
 }
 
@@ -64,6 +65,7 @@ impl Intersection<'_> {
         }
 
         self.normalv = Some(normalv);
+        self.reflectv = Some(ray.direction.reflect(normalv));
         self.over_point = Some(point + normalv * 1e-2);
 
         *self
@@ -86,19 +88,18 @@ impl Object {
                 }
 
                 let t = -transformed_ray.origin.y / transformed_ray.direction.y;
-                vec![
-                    Intersection {
-                        t: t,
-                        object: self,
-                        point: None,
-                        over_point: None,
-                        eyev: None,
-                        normalv: None,
-                        inside: None,
-                    }
-                    .prepare(ray, inverse_transform),
-                ]
-            },
+                vec![Intersection {
+                    t: t,
+                    object: self,
+                    point: None,
+                    over_point: None,
+                    eyev: None,
+                    normalv: None,
+                    reflectv: None,
+                    inside: None,
+                }
+                .prepare(ray, inverse_transform)]
+            }
             Shape::Sphere {} => {
                 // The vector from the sphere's center, to the ray origin
                 // (remember: the sphere is centered at the world origin)
@@ -123,6 +124,7 @@ impl Object {
                             over_point: None,
                             eyev: None,
                             normalv: None,
+                            reflectv: None,
                             inside: None,
                         }
                         .prepare(ray, inverse_transform),
@@ -133,15 +135,14 @@ impl Object {
                             over_point: None,
                             eyev: None,
                             normalv: None,
+                            reflectv: None,
                             inside: None,
                         }
                         .prepare(ray, inverse_transform),
                     ]
                 }
             }
-            Shape::TestShape {} => {
-                vec![]
-            }
+            Shape::TestShape {} => vec![],
         }
     }
 
@@ -154,9 +155,7 @@ impl Object {
     /// inverse transform).
     fn normal_inv(&self, point: Tuple4, inverse_transform: Matrix4) -> Tuple4 {
         let object_normal = match self.shape {
-            Shape::Plane {} => {
-                vector3(0., 1., 0.)
-            },
+            Shape::Plane {} => vector3(0., 1., 0.),
             _ => {
                 let object_point = inverse_transform * point;
                 object_point - point3(0., 0., 0.)
@@ -192,6 +191,7 @@ mod tests {
             over_point: None,
             eyev: None,
             normalv: None,
+            reflectv: None,
             inside: None,
         }
     }
@@ -343,9 +343,9 @@ mod tests {
     #[test]
     fn the_normal_of_a_plane_is_constant_everywhere() {
         let p = plane();
-        let n1 = p.normal(point3(0., 0., 0.,));
-        let n2 = p.normal(point3(10., 0., -10.,));
-        let n3 = p.normal(point3(-5., 0., 150.,));
+        let n1 = p.normal(point3(0., 0., 0.));
+        let n2 = p.normal(point3(10., 0., -10.));
+        let n3 = p.normal(point3(-5., 0., 150.));
         assert_eq!(n1, vector3(0., 1., 0.,));
         assert_eq!(n2, vector3(0., 1., 0.,));
         assert_eq!(n3, vector3(0., 1., 0.,));
@@ -467,6 +467,28 @@ mod tests {
         assert_eq!(xs[1].eyev, Some(vector3(0., 0., -1.)));
         assert_eq!(xs[1].normalv, Some(vector3(0., 0., -1.)));
         assert_eq!(xs[1].inside, Some(true));
+    }
+
+    #[test]
+    fn precomputing_the_reflection_vector() {
+        let shape = plane();
+        let r = ray(
+            point3(0., 1., -1.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
+        let mut i = intersection(std::f32::consts::SQRT_2, &shape);
+        i.prepare(&r, shape.transform.inverse());
+        if let Some(reflectv) = i.reflectv {
+            assert_approx_eq!(reflectv.x, 0.0);
+            assert_approx_eq!(reflectv.y, std::f32::consts::SQRT_2 * 0.5);
+            assert_approx_eq!(reflectv.z, std::f32::consts::SQRT_2 * 0.5);
+        } else {
+            panic!();
+        }
     }
 
     #[test]

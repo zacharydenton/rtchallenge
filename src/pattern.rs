@@ -28,31 +28,33 @@ impl Pattern {
                 } else {
                     b
                 }
-            },
+            }
             PatternSpec::LinearGradient(a, b) => {
                 let distance = b - a;
                 let fraction = point.x.fract();
                 a + distance * fraction
-            },
+            }
             PatternSpec::Ring(a, b) => {
                 if (point.x * point.x + point.z * point.z).sqrt().floor() as i32 % 2 == 0 {
                     a
                 } else {
                     b
                 }
-            },
+            }
             PatternSpec::Checkers(a, b) => {
-                if (point.x.floor() + point.y.floor() + point.z.floor()) as i32 % 2 == 0 {
+                let c = point.x.floor() + point.z.floor();
+                let f = (c * 0.5).fract();
+                if f.abs() < 1e-2 {
                     a
                 } else {
                     b
                 }
-            },
+            }
             PatternSpec::RadialGradient(a, b) => {
                 let distance = b - a;
                 let fraction = (point.x * point.x + point.z * point.z).sqrt().fract();
                 a + distance * fraction
-            },
+            }
         }
     }
 
@@ -102,15 +104,15 @@ pub fn radial_gradient_pattern(a: Color, b: Color) -> Pattern {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_approx_eq::assert_approx_eq;
     use crate::transform::*;
+    use assert_approx_eq::assert_approx_eq;
 
     fn white() -> Color {
-        color(1., 1., 1.,)
+        color(1., 1., 1.)
     }
 
     fn black() -> Color {
-        color(0., 0., 0.,)
+        color(0., 0., 0.)
     }
 
     #[test]
@@ -232,10 +234,26 @@ mod tests {
         assert_eq!(pattern.at(point3(0., 0., 0.5)), color(0.5, 0.5, 0.5));
         assert_eq!(pattern.at(point3(0., 0., 0.75)), color(0.25, 0.25, 0.25));
 
-        let c1 = pattern.at(point3(0.25 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.25 * std::f32::consts::FRAC_1_SQRT_2));
-        let c2 = pattern.at(point3(0.5 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.5 * std::f32::consts::FRAC_1_SQRT_2));
-        let c3 = pattern.at(point3(0.75 * std::f32::consts::FRAC_1_SQRT_2, 0., 0.75 * std::f32::consts::FRAC_1_SQRT_2));
-        let c4 = pattern.at(point3(std::f32::consts::FRAC_1_SQRT_2, 0., std::f32::consts::FRAC_1_SQRT_2));
+        let c1 = pattern.at(point3(
+            0.25 * std::f32::consts::FRAC_1_SQRT_2,
+            0.,
+            0.25 * std::f32::consts::FRAC_1_SQRT_2,
+        ));
+        let c2 = pattern.at(point3(
+            0.5 * std::f32::consts::FRAC_1_SQRT_2,
+            0.,
+            0.5 * std::f32::consts::FRAC_1_SQRT_2,
+        ));
+        let c3 = pattern.at(point3(
+            0.75 * std::f32::consts::FRAC_1_SQRT_2,
+            0.,
+            0.75 * std::f32::consts::FRAC_1_SQRT_2,
+        ));
+        let c4 = pattern.at(point3(
+            std::f32::consts::FRAC_1_SQRT_2,
+            0.,
+            std::f32::consts::FRAC_1_SQRT_2,
+        ));
 
         assert_approx_eq!(c1.r, 0.75);
         assert_approx_eq!(c1.g, 0.75);

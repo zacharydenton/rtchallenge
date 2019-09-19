@@ -11,6 +11,7 @@ pub struct Material {
     pub diffuse: f32,
     pub specular: f32,
     pub shininess: f32,
+    pub reflective: f32,
     pub pattern: Option<Pattern>,
 }
 
@@ -21,6 +22,7 @@ pub fn material() -> Material {
         diffuse: 0.9,
         specular: 0.9,
         shininess: 200.0,
+        reflective: 0.0,
         pattern: None,
     }
 }
@@ -37,12 +39,8 @@ impl Material {
         in_shadow: bool,
     ) -> Color {
         let base_color = match self.pattern {
-            Some(pattern) => {
-                pattern.at_object(object, *point)
-            },
-            None => {
-                self.color
-            }
+            Some(pattern) => pattern.at_object(object, *point),
+            None => self.color,
         };
 
         // Combine the surface color with the light's color/intensity.
@@ -96,6 +94,7 @@ mod tests {
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
         assert_eq!(m.shininess, 200.0);
+        assert_eq!(m.reflective, 0.0);
     }
 
     #[test]
@@ -190,8 +189,22 @@ mod tests {
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.0);
         let light = point_light(point3(0., 0., -10.), color(1., 1., 1.));
-        let c1 = m.lighting(&sphere(), &light, &point3(0.9, 0., 0.), &eyev, &normalv, false);
-        let c2 = m.lighting(&sphere(), &light, &point3(1.1, 0., 0.), &eyev, &normalv, false);
+        let c1 = m.lighting(
+            &sphere(),
+            &light,
+            &point3(0.9, 0., 0.),
+            &eyev,
+            &normalv,
+            false,
+        );
+        let c2 = m.lighting(
+            &sphere(),
+            &light,
+            &point3(1.1, 0., 0.),
+            &eyev,
+            &normalv,
+            false,
+        );
         assert_eq!(c1, color(1., 1., 1.));
         assert_eq!(c2, color(0., 0., 0.));
     }

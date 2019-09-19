@@ -30,14 +30,12 @@ fn main() {
     world.objects.push(floor);
 
     let mut back_wall = plane();
-    back_wall.transform = translate(0., 0., 1.5)
-        * rotate_x(std::f32::consts::FRAC_PI_2);
+    back_wall.transform = translate(0., 0., 1.5) * rotate_x(std::f32::consts::FRAC_PI_2);
     back_wall.material = floor_material;
     world.objects.push(back_wall);
 
     let mut front_wall = plane();
-    front_wall.transform = translate(0., 0., -1.5)
-        * rotate_x(-std::f32::consts::FRAC_PI_2);
+    front_wall.transform = translate(0., 0., -1.5) * rotate_x(-std::f32::consts::FRAC_PI_2);
     front_wall.material = floor_material;
     world.objects.push(front_wall);
 
@@ -78,8 +76,7 @@ fn main() {
     world.objects.push(middle);
 
     let mut right = sphere();
-    right.transform =
-        translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5);
+    right.transform = translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5);
     right.material = material();
     right.material.color = color(0.5, 1., 0.1);
     right.material.diffuse = 0.7;

@@ -12,6 +12,8 @@ pub struct Material {
     pub specular: f32,
     pub shininess: f32,
     pub reflective: f32,
+    pub transparency: f32,
+    pub refractive_index: f32,
     pub pattern: Option<Pattern>,
 }
 
@@ -23,6 +25,8 @@ pub fn material() -> Material {
         specular: 0.9,
         shininess: 200.0,
         reflective: 0.0,
+        transparency: 0.0,
+        refractive_index: 1.0,
         pattern: None,
     }
 }
@@ -95,6 +99,8 @@ mod tests {
         assert_eq!(m.specular, 0.9);
         assert_eq!(m.shininess, 200.0);
         assert_eq!(m.reflective, 0.0);
+        assert_eq!(m.transparency, 0.0);
+        assert_eq!(m.refractive_index, 1.0);
     }
 
     #[test]

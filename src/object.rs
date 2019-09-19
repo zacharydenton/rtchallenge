@@ -35,21 +35,52 @@ pub fn sphere() -> Object {
     }
 }
 
+/// Constructs a unit sphere centered at the origin (0, 0, 0) with a glassy material.
+pub fn glass_sphere() -> Object {
+    let mut glass_material = material();
+    glass_material.transparency = 1.0;
+    glass_material.refractive_index = 1.5;
+    Object {
+        shape: Shape::Sphere {},
+        transform: I4,
+        material: glass_material,
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Intersection<'a> {
     pub t: f32,
     pub object: &'a Object,
     pub point: Option<Tuple4>,
     pub over_point: Option<Tuple4>,
+    pub under_point: Option<Tuple4>,
     pub eyev: Option<Tuple4>,
     pub normalv: Option<Tuple4>,
     pub reflectv: Option<Tuple4>,
     pub inside: Option<bool>,
+    pub n1: Option<f32>,
+    pub n2: Option<f32>,
+}
+
+fn intersection(t: f32, object: &Object) -> Intersection {
+    Intersection {
+        t,
+        object,
+        point: None,
+        over_point: None,
+        under_point: None,
+        eyev: None,
+        normalv: None,
+        reflectv: None,
+        inside: None,
+        n1: None,
+        n2: None,
+    }
 }
 
 impl Intersection<'_> {
     #[inline]
-    fn prepare(&mut self, ray: &Ray, inverse_transform: Matrix4) -> Self {
+    fn prepare(&mut self, ray: &Ray, inverse_transform: Matrix4, all_intersections: &Intersections) -> Self {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
         let mut normalv = self.object.normal_inv(point, inverse_transform);
@@ -67,6 +98,33 @@ impl Intersection<'_> {
         self.normalv = Some(normalv);
         self.reflectv = Some(ray.direction.reflect(normalv));
         self.over_point = Some(point + normalv * 1e-2);
+        self.under_point = Some(point - normalv * 1e-2);
+
+        let mut containers: Vec<&Object> = vec![];
+        for i in all_intersections {
+            if i.t == self.t && i.object == self.object {
+                if containers.len() == 0 {
+                    self.n1 = Some(1.0);
+                } else {
+                    self.n1 = Some(containers.last().unwrap().material.refractive_index);
+                }
+            }
+
+            if containers.contains(&i.object) {
+                containers.retain(|o| o != &i.object);
+            } else {
+                containers.push(i.object);
+            }
+
+            if i.t == self.t && i.object == self.object {
+                if containers.len() == 0 {
+                    self.n2 = Some(1.0);
+                } else {
+                    self.n2 = Some(containers.last().unwrap().material.refractive_index);
+                }
+                break;
+            }
+        }
 
         *self
     }
@@ -81,24 +139,14 @@ impl Object {
         let inverse_transform = self.transform.inverse();
         let transformed_ray = ray.transform(inverse_transform);
 
-        match self.shape {
+        let mut result = match self.shape {
             Shape::Plane {} => {
                 if transformed_ray.direction.y.abs() < 1e-2 {
                     return vec![];
                 }
 
                 let t = -transformed_ray.origin.y / transformed_ray.direction.y;
-                vec![Intersection {
-                    t: t,
-                    object: self,
-                    point: None,
-                    over_point: None,
-                    eyev: None,
-                    normalv: None,
-                    reflectv: None,
-                    inside: None,
-                }
-                .prepare(ray, inverse_transform)]
+                vec![intersection(t, self)]
             }
             Shape::Sphere {} => {
                 // The vector from the sphere's center, to the ray origin
@@ -117,33 +165,16 @@ impl Object {
                     let t1 = (-b - discriminant.sqrt()) / (2. * a);
                     let t2 = (-b + discriminant.sqrt()) / (2. * a);
                     vec![
-                        Intersection {
-                            t: t1,
-                            object: self,
-                            point: None,
-                            over_point: None,
-                            eyev: None,
-                            normalv: None,
-                            reflectv: None,
-                            inside: None,
-                        }
-                        .prepare(ray, inverse_transform),
-                        Intersection {
-                            t: t2,
-                            object: self,
-                            point: None,
-                            over_point: None,
-                            eyev: None,
-                            normalv: None,
-                            reflectv: None,
-                            inside: None,
-                        }
-                        .prepare(ray, inverse_transform),
+                        intersection(t1, self),
+                        intersection(t2, self),
                     ]
                 }
             }
             Shape::TestShape {} => vec![],
-        }
+        };
+
+        let all_intersections = result.clone();
+        result.iter_mut().map(|intersection| intersection.prepare(ray, inverse_transform, &all_intersections)).collect()
     }
 
     /// Returns the surface normal at the given point.
@@ -182,19 +213,6 @@ mod tests {
     use crate::transform::*;
     use assert_approx_eq::assert_approx_eq;
     use test::Bencher;
-
-    fn intersection(t: f32, object: &Object) -> Intersection {
-        Intersection {
-            t,
-            object,
-            point: None,
-            over_point: None,
-            eyev: None,
-            normalv: None,
-            reflectv: None,
-            inside: None,
-        }
-    }
 
     fn test_object() -> Object {
         Object {
@@ -481,7 +499,7 @@ mod tests {
             ),
         );
         let mut i = intersection(std::f32::consts::SQRT_2, &shape);
-        i.prepare(&r, shape.transform.inverse());
+        i.prepare(&r, shape.transform.inverse(), &vec![i]);
         if let Some(reflectv) = i.reflectv {
             assert_approx_eq!(reflectv.x, 0.0);
             assert_approx_eq!(reflectv.y, std::f32::consts::SQRT_2 * 0.5);
@@ -502,6 +520,18 @@ mod tests {
 
         assert!(i.over_point.unwrap().z < -1e-2 / 2.);
         assert!(i.point.unwrap().z > i.over_point.unwrap().z);
+    }
+
+    #[test]
+    fn the_hit_should_compute_the_under_point() {
+        let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
+        let mut shape = glass_sphere();
+        shape.transform = translate(0., 0., 1.);
+        let mut i = intersection(5., &shape);
+        let xs = vec![i];
+        i.prepare(&r, i.object.transform.inverse(), &xs);
+        assert!(i.under_point.unwrap().z > 5e-3);
+        assert!(i.point.unwrap().z < i.under_point.unwrap().z);
     }
 
     #[test]
@@ -538,6 +568,51 @@ mod tests {
         assert_eq!(xs.len(), 1);
         assert_eq!(xs[0].t, 1.);
         assert_eq!(xs[0].object, &p);
+    }
+
+    #[test]
+    fn a_helper_for_producing_a_sphere_with_a_glassy_material() {
+        let s = glass_sphere();
+        assert_eq!(s.transform, I4);
+        assert_eq!(s.material.transparency, 1.0);
+        assert_eq!(s.material.refractive_index, 1.5);
+    }
+
+    #[test]
+    fn finding_n1_and_n2_at_various_intersections() {
+        let mut a = glass_sphere();
+        a.transform = scale(2., 2., 2.);
+        a.material.refractive_index = 1.5;
+        let mut b = glass_sphere();
+        b.transform = translate(0., 0., -0.25);
+        b.material.refractive_index = 2.0;
+        let mut c = glass_sphere();
+        c.transform = translate(0., 0., 0.25);
+        c.material.refractive_index = 2.5;
+        let r = ray(point3(0., 0., -4.), vector3(0., 0., 1.));
+        let mut xs = vec![
+            intersection(2., &a),
+            intersection(2.75, &b),
+            intersection(3.25, &c),
+            intersection(4.75, &b),
+            intersection(5.25, &c),
+            intersection(6., &a),
+        ];
+        let all_intersections = xs.clone();
+        let expected = vec![
+            (1.0, 1.5),
+            (1.5, 2.0),
+            (2.0, 2.5),
+            (2.5, 2.5),
+            (2.5, 1.5),
+            (1.5, 1.0),
+        ];
+
+        for (intersection, (n1, n2)) in xs.iter_mut().zip(expected) {
+            intersection.prepare(&r, intersection.object.transform.inverse(), &all_intersections);
+            assert_eq!(intersection.n1.unwrap(), n1);
+            assert_eq!(intersection.n2.unwrap(), n2);
+        }
     }
 
     #[bench]

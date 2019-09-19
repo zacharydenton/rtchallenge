@@ -10,6 +10,7 @@ pub enum PatternSpec {
     RadialGradient(Color, Color),
     Ring(Color, Color),
     Checkers(Color, Color),
+    TestPattern,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -54,6 +55,9 @@ impl Pattern {
                 let distance = b - a;
                 let fraction = (point.x * point.x + point.z * point.z).sqrt().fract();
                 a + distance * fraction
+            },
+            PatternSpec::TestPattern => {
+                color(point.x, point.y, point.z)
             }
         }
     }
@@ -97,6 +101,13 @@ pub fn checkers_pattern(a: Color, b: Color) -> Pattern {
 pub fn radial_gradient_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::RadialGradient(a, b),
+        transform: I4,
+    }
+}
+
+pub fn test_pattern() -> Pattern {
+    Pattern {
+        spec: PatternSpec::TestPattern,
         transform: I4,
     }
 }
@@ -208,14 +219,6 @@ mod tests {
     }
 
     #[test]
-    fn checkers_should_repeat_in_y() {
-        let pattern = checkers_pattern(white(), black());
-        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
-        assert_eq!(pattern.at(point3(0., 0.99, 0.)), white());
-        assert_eq!(pattern.at(point3(0., 1.01, 0.)), black());
-    }
-
-    #[test]
     fn checkers_should_repeat_in_z() {
         let pattern = checkers_pattern(white(), black());
         assert_eq!(pattern.at(point3(0., 0., 0.)), white());
@@ -272,4 +275,40 @@ mod tests {
         assert_approx_eq!(c4.b, 0.);
     }
 
+    #[test]
+    fn a_pattern_with_an_object_transformation() {
+        let mut shape = sphere();
+        shape.transform = scale(2., 2., 2.);
+        let pattern = test_pattern();
+        let c = pattern.at_object(&shape, point3(2., 3., 4.));
+
+        assert_approx_eq!(c.r, 1.);
+        assert_approx_eq!(c.g, 1.5);
+        assert_approx_eq!(c.b, 2.);
+    }
+
+    #[test]
+    fn a_pattern_with_a_pattern_transformation() {
+        let shape = sphere();
+        let mut pattern = test_pattern();
+        pattern.transform = scale(2., 2., 2.);
+        let c = pattern.at_object(&shape, point3(2., 3., 4.));
+
+        assert_approx_eq!(c.r, 1.);
+        assert_approx_eq!(c.g, 1.5);
+        assert_approx_eq!(c.b, 2.);
+    }
+
+    #[test]
+    fn a_pattern_with_an_object_transformation_and_a_pattern_transformation() {
+        let mut shape = sphere();
+        shape.transform = scale(2., 2., 2.);
+        let mut pattern = test_pattern();
+        pattern.transform = translate(0.5, 1., 1.5);
+        let c = pattern.at_object(&shape, point3(2.5, 3., 3.5));
+
+        assert_approx_eq!(c.r, 0.75);
+        assert_approx_eq!(c.g, 0.5);
+        assert_approx_eq!(c.b, 0.25);
+    }
 }

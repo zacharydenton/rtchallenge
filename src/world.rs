@@ -73,7 +73,14 @@ impl World {
         let reflection = self.reflected_color(intersection, remaining);
         let refraction = self.refracted_color(intersection, remaining);
 
-        surface + reflection + refraction
+        let material = intersection.object.material;
+        if material.reflective > 0. && material.transparency > 0. {
+            let reflectance = schlick(intersection);
+            surface + reflection * reflectance +
+                      refraction * (1. - reflectance)
+        } else {
+            surface + reflection + refraction
+        }
     }
 
     /// Intersects the ray with the world and returns the color at the resulting
@@ -476,6 +483,32 @@ mod tests {
         assert_approx_eq!(c.r, 0.93642, 1e-2);
         assert_approx_eq!(c.g, 0.68642, 1e-2);
         assert_approx_eq!(c.b, 0.68642, 1e-2);
+    }
+
+    #[test]
+    fn shade_hit_with_a_reflective_and_transparent_material() {
+        let mut w = default_world();
+
+        let mut floor = plane();
+        floor.transform = translate(0., -1., 0.);
+        floor.material.reflective = 0.5;
+        floor.material.transparency = 0.5;
+        floor.material.refractive_index = 1.5;
+        w.objects.push(floor);
+
+        let mut ball = sphere();
+        ball.transform = translate(0., -3.5, -0.5);
+        ball.material.color = color(1.0, 0., 0.);
+        ball.material.ambient = 0.5;
+        w.objects.push(ball);
+
+        let r = ray(point3(0., 0., -3.), vector3(0., -std::f32::consts::SQRT_2 * 0.5, std::f32::consts::SQRT_2 * 0.5));
+        let xs = w.intersect(&r);
+        let c = w.shade(&xs[0], 5);
+
+        assert_approx_eq!(c.r, 0.93391, 1e-2);
+        assert_approx_eq!(c.g, 0.69643, 1e-2);
+        assert_approx_eq!(c.b, 0.69243, 1e-2);
     }
 
     #[bench]

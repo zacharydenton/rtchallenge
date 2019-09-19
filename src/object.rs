@@ -132,6 +132,31 @@ impl Intersection<'_> {
 
 pub type Intersections<'a> = Vec<Intersection<'a>>;
 
+/// Computes the Schlick approximation for the given intersection.
+pub fn schlick(intersection: &Intersection) -> f32 {
+    let n1 = intersection.n1.unwrap();
+    let n2 = intersection.n2.unwrap();
+    let mut cos = intersection.eyev.unwrap().dot(intersection.normalv.unwrap());
+
+    if n1 > n2 {
+        let n = n1 / n2;
+        let sin2_t = n * n * (1. - cos * cos);
+
+        if sin2_t > 1.0 {
+            // Total internal reflection.
+            return 1.0;
+        }
+
+        let cos_t = (1. - sin2_t).sqrt();
+        cos = cos_t;
+    }
+
+    let r = (n1 - n2) / (n1 + n2);
+    let r0 = r * r;
+
+    r0 + (1. - r0) * (1. - cos).powi(5)
+}
+
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
     pub fn intersect(&self, ray: &Ray) -> Intersections {
@@ -613,6 +638,50 @@ mod tests {
             assert_eq!(intersection.n1.unwrap(), n1);
             assert_eq!(intersection.n2.unwrap(), n2);
         }
+    }
+
+    #[test]
+    fn the_schlick_approximation_under_total_internal_reflection() {
+        let shape = glass_sphere();
+        let r = ray(point3(0., 0., -std::f32::consts::SQRT_2 * 0.5), vector3(0., 1., 0.));
+        let mut xs = vec![
+            intersection(-std::f32::consts::SQRT_2 * 0.5, &shape),
+            intersection(std::f32::consts::SQRT_2 * 0.5, &shape),
+        ];
+        let all_intersections = xs.clone();
+        let i = xs.last_mut().unwrap();
+        i.prepare(&r, i.object.transform.inverse(), &all_intersections);
+        let reflectance = schlick(&i);
+        assert_approx_eq!(reflectance, 1.0);
+    }
+
+    #[test]
+    fn the_schlick_approximation_with_a_perpendicular_viewing_angle() {
+        let shape = glass_sphere();
+        let r = ray(point3(0., 0., 0.), vector3(0., 1., 0.));
+        let mut xs = vec![
+            intersection(-1., &shape),
+            intersection(1., &shape),
+        ];
+        let all_intersections = xs.clone();
+        let i = xs.last_mut().unwrap();
+        i.prepare(&r, i.object.transform.inverse(), &all_intersections);
+        let reflectance = schlick(&i);
+        assert_approx_eq!(reflectance, 0.04);
+    }
+
+    #[test]
+    fn the_schlick_approximation_with_small_angle_and_n2_greater_than_n1() {
+        let shape = glass_sphere();
+        let r = ray(point3(0., 0.99, -2.), vector3(0., 0., 1.));
+        let mut xs = vec![
+            intersection(1.8589, &shape),
+        ];
+        let all_intersections = xs.clone();
+        let i = xs.first_mut().unwrap();
+        i.prepare(&r, i.object.transform.inverse(), &all_intersections);
+        let reflectance = schlick(&i);
+        assert_approx_eq!(reflectance, 0.48873);
     }
 
     #[bench]

@@ -269,13 +269,14 @@ impl Object {
         let object_normal = match self.shape {
             Shape::Plane {} => vector3(0., 1., 0.),
             Shape::Cube {} => {
-                let maxc = point.x.abs().max(point.y.abs()).max(point.z.abs());
-                if maxc == point.x.abs() {
-                    vector3(point.x, 0., 0.)
-                } else if maxc == point.y.abs() {
-                    vector3(0., point.y, 0.)
+                let object_point = inverse_transform * point;
+                let maxc = object_point.x.abs().max(object_point.y.abs()).max(object_point.z.abs());
+                if maxc == object_point.x.abs() {
+                    vector3(object_point.x, 0., 0.)
+                } else if maxc == object_point.y.abs() {
+                    vector3(0., object_point.y, 0.)
                 } else {
-                    vector3(0., 0., point.z)
+                    vector3(0., 0., object_point.z)
                 }
             }
             Shape::Sphere {} | Shape::TestShape {} => {

@@ -55,10 +55,8 @@ impl Pattern {
                 let distance = b - a;
                 let fraction = (point.x * point.x + point.z * point.z).sqrt().fract();
                 a + distance * fraction
-            },
-            PatternSpec::TestPattern => {
-                color(point.x, point.y, point.z)
             }
+            PatternSpec::TestPattern => color(point.x, point.y, point.z),
         }
     }
 

@@ -76,8 +76,7 @@ impl World {
         let material = intersection.object.material;
         if material.reflective > 0. && material.transparency > 0. {
             let reflectance = schlick(intersection);
-            surface + reflection * reflectance +
-                      refraction * (1. - reflectance)
+            surface + reflection * reflectance + refraction * (1. - reflectance)
         } else {
             surface + reflection + refraction
         }
@@ -135,7 +134,10 @@ impl World {
     pub fn refracted_color(&self, intersection: &Intersection, remaining: i32) -> Color {
         if intersection.object.material.transparency > 0. && remaining > 0 {
             let n_ratio = intersection.n1.unwrap() / intersection.n2.unwrap();
-            let cos_i = intersection.eyev.unwrap().dot(intersection.normalv.unwrap());
+            let cos_i = intersection
+                .eyev
+                .unwrap()
+                .dot(intersection.normalv.unwrap());
             let sin2_t = n_ratio * n_ratio * (1. - cos_i * cos_i);
 
             if sin2_t > 1. {
@@ -144,7 +146,8 @@ impl World {
             }
 
             let cos_t = (1. - sin2_t).sqrt();
-            let direction = intersection.normalv.unwrap() * (n_ratio * cos_i - cos_t) - intersection.eyev.unwrap() * n_ratio;
+            let direction = intersection.normalv.unwrap() * (n_ratio * cos_i - cos_t)
+                - intersection.eyev.unwrap() * n_ratio;
             let refract_ray = ray(intersection.under_point.unwrap(), direction);
 
             let refract_color = self.color_at_remaining(&refract_ray, remaining - 1);
@@ -158,8 +161,8 @@ impl World {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_approx_eq::assert_approx_eq;
     use crate::pattern::*;
+    use assert_approx_eq::assert_approx_eq;
     use test::Bencher;
 
     #[test]
@@ -435,7 +438,10 @@ mod tests {
         let mut shape = w.objects.first_mut().unwrap();
         shape.material.transparency = 1.0;
         shape.material.refractive_index = 1.5;
-        let r = ray(point3(0., 0., std::f32::consts::SQRT_2 * 0.5), vector3(0., 1., 0.));
+        let r = ray(
+            point3(0., 0., std::f32::consts::SQRT_2 * 0.5),
+            vector3(0., 1., 0.),
+        );
         let xs = w.intersect(&r);
         let i = xs[0];
         let c = w.refracted_color(&i, 5);
@@ -476,7 +482,14 @@ mod tests {
         ball.material.ambient = 0.5;
         w.objects.push(ball);
 
-        let r = ray(point3(0., 0., -3.), vector3(0., -std::f32::consts::SQRT_2 * 0.5, std::f32::consts::SQRT_2 * 0.5));
+        let r = ray(
+            point3(0., 0., -3.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
         let xs = w.intersect(&r);
         let c = w.shade(&xs[0], 5);
 
@@ -502,7 +515,14 @@ mod tests {
         ball.material.ambient = 0.5;
         w.objects.push(ball);
 
-        let r = ray(point3(0., 0., -3.), vector3(0., -std::f32::consts::SQRT_2 * 0.5, std::f32::consts::SQRT_2 * 0.5));
+        let r = ray(
+            point3(0., 0., -3.),
+            vector3(
+                0.,
+                -std::f32::consts::SQRT_2 * 0.5,
+                std::f32::consts::SQRT_2 * 0.5,
+            ),
+        );
         let xs = w.intersect(&r);
         let c = w.shade(&xs[0], 5);
 

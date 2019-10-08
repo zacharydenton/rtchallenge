@@ -7,6 +7,7 @@ use crate::tuple::*;
 pub enum Shape {
     Plane {},
     Sphere {},
+    Cube {},
     TestShape {},
 }
 
@@ -30,6 +31,15 @@ pub fn plane() -> Object {
 pub fn sphere() -> Object {
     Object {
         shape: Shape::Sphere {},
+        transform: I4,
+        material: material(),
+    }
+}
+
+/// Constructs a unit cube centered at the origin (0, 0, 0).
+pub fn cube() -> Object {
+    Object {
+        shape: Shape::Cube {},
         transform: I4,
         material: material(),
     }
@@ -80,7 +90,12 @@ fn intersection(t: f32, object: &Object) -> Intersection {
 
 impl Intersection<'_> {
     #[inline]
-    fn prepare(&mut self, ray: &Ray, inverse_transform: Matrix4, all_intersections: &Intersections) -> Self {
+    fn prepare(
+        &mut self,
+        ray: &Ray,
+        inverse_transform: Matrix4,
+        all_intersections: &Intersections,
+    ) -> Self {
         let point = ray.position(self.t);
         let eyev = -ray.direction;
         let mut normalv = self.object.normal_inv(point, inverse_transform);
@@ -136,7 +151,10 @@ pub type Intersections<'a> = Vec<Intersection<'a>>;
 pub fn schlick(intersection: &Intersection) -> f32 {
     let n1 = intersection.n1.unwrap();
     let n2 = intersection.n2.unwrap();
-    let mut cos = intersection.eyev.unwrap().dot(intersection.normalv.unwrap());
+    let mut cos = intersection
+        .eyev
+        .unwrap()
+        .dot(intersection.normalv.unwrap());
 
     if n1 > n2 {
         let n = n1 / n2;
@@ -155,6 +173,27 @@ pub fn schlick(intersection: &Intersection) -> f32 {
     let r0 = r * r;
 
     r0 + (1. - r0) * (1. - cos).powi(5)
+}
+
+// Cube intersection helper.
+fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
+    let tmin_numerator = -1. - origin;
+    let tmax_numerator = 1. - origin;
+
+    let (tmin, tmax) = if direction.abs() >= 1e-2 {
+        (tmin_numerator / direction, tmax_numerator / direction)
+    } else {
+        (
+            tmin_numerator * std::f32::INFINITY,
+            tmax_numerator * std::f32::INFINITY,
+        )
+    };
+
+    if tmin > tmax {
+        (tmax, tmin)
+    } else {
+        (tmin, tmax)
+    }
 }
 
 impl Object {
@@ -189,17 +228,34 @@ impl Object {
                 } else {
                     let t1 = (-b - discriminant.sqrt()) / (2. * a);
                     let t2 = (-b + discriminant.sqrt()) / (2. * a);
-                    vec![
-                        intersection(t1, self),
-                        intersection(t2, self),
-                    ]
+                    vec![intersection(t1, self), intersection(t2, self)]
+                }
+            }
+            Shape::Cube {} => {
+                let (xtmin, xtmax) =
+                    check_axis(transformed_ray.origin.x, transformed_ray.direction.x);
+                let (ytmin, ytmax) =
+                    check_axis(transformed_ray.origin.y, transformed_ray.direction.y);
+                let (ztmin, ztmax) =
+                    check_axis(transformed_ray.origin.z, transformed_ray.direction.z);
+
+                let tmin = xtmin.max(ytmin).max(ztmin);
+                let tmax = xtmax.min(ytmax).min(ztmax);
+
+                if tmin > tmax {
+                    vec![]
+                } else {
+                    vec![intersection(tmin, self), intersection(tmax, self)]
                 }
             }
             Shape::TestShape {} => vec![],
         };
 
         let all_intersections = result.clone();
-        result.iter_mut().map(|intersection| intersection.prepare(ray, inverse_transform, &all_intersections)).collect()
+        result
+            .iter_mut()
+            .map(|intersection| intersection.prepare(ray, inverse_transform, &all_intersections))
+            .collect()
     }
 
     /// Returns the surface normal at the given point.
@@ -212,7 +268,17 @@ impl Object {
     fn normal_inv(&self, point: Tuple4, inverse_transform: Matrix4) -> Tuple4 {
         let object_normal = match self.shape {
             Shape::Plane {} => vector3(0., 1., 0.),
-            _ => {
+            Shape::Cube {} => {
+                let maxc = point.x.abs().max(point.y.abs()).max(point.z.abs());
+                if maxc == point.x.abs() {
+                    vector3(point.x, 0., 0.)
+                } else if maxc == point.y.abs() {
+                    vector3(0., point.y, 0.)
+                } else {
+                    vector3(0., 0., point.z)
+                }
+            }
+            Shape::Sphere {} | Shape::TestShape {} => {
                 let object_point = inverse_transform * point;
                 object_point - point3(0., 0., 0.)
             }
@@ -301,6 +367,63 @@ mod tests {
         assert_eq!(xs[0].object, &s);
         assert_eq!(xs[1].t, -4.0);
         assert_eq!(xs[1].object, &s);
+    }
+
+    #[test]
+    fn a_ray_intersects_a_cube() {
+        let c = cube();
+        let examples = vec![
+            (point3(5., 0.5, 0.), vector3(-1., 0., 0.), 4., 6.),
+            (point3(-5., 0.5, 0.), vector3(1., 0., 0.), 4., 6.),
+            (point3(0.5, 5., 0.), vector3(0., -1., 0.), 4., 6.),
+            (point3(0.5, -5., 0.), vector3(0., 1., 0.), 4., 6.),
+            (point3(0.5, 0., 5.), vector3(0., 0., -1.), 4., 6.),
+            (point3(0.5, 0., -5.), vector3(0., 0., 1.), 4., 6.),
+            (point3(0., 0.5, 0.), vector3(0., 0., 1.), -1., 1.),
+        ];
+        for (origin, direction, t1, t2) in examples {
+            let r = ray(origin, direction);
+            let xs = c.intersect(&r);
+            assert_eq!(xs.len(), 2);
+            assert_eq!(xs[0].t, t1);
+            assert_eq!(xs[1].t, t2);
+        }
+    }
+
+    #[test]
+    fn a_ray_misses_a_cube() {
+        let c = cube();
+        let examples = vec![
+            (point3(-2., 0., 0.), vector3(0.2673, 0.5345, 0.8018)),
+            (point3(0., -2., 0.), vector3(0.8018, 0.2673, 0.5345)),
+            (point3(0., 0., -2.), vector3(0.5345, 0.8018, 0.2673)),
+            (point3(2., 0., 2.), vector3(0., 0., -1.)),
+            (point3(0., 2., 2.), vector3(0., -1., 0.)),
+            (point3(2., 2., 0.), vector3(-1., 0., 0.)),
+        ];
+        for (origin, direction) in examples {
+            let r = ray(origin, direction);
+            let xs = c.intersect(&r);
+            assert_eq!(xs.len(), 0);
+        }
+    }
+
+    #[test]
+    fn the_normal_on_the_surface_of_a_cube() {
+        let c = cube();
+        let examples = vec![
+            (point3(1., 0.5, -0.8), vector3(1., 0., 0.)),
+            (point3(-1., -0.2, 0.9), vector3(-1., 0., 0.)),
+            (point3(-0.4, 1., -0.1), vector3(0., 1., 0.)),
+            (point3(0.3, -1., -0.7), vector3(0., -1., 0.)),
+            (point3(-0.6, 0.3, 1.), vector3(0., 0., 1.)),
+            (point3(0.4, 0.4, -1.), vector3(0., 0., -1.)),
+            (point3(1., 1., 1.), vector3(1., 0., 0.)),
+            (point3(-1., -1., -1.), vector3(-1., 0., 0.)),
+        ];
+        for (point, normal) in examples {
+            assert_eq!(c.normal(point), normal);
+        }
     }
 
     #[test]
@@ -634,7 +757,11 @@ mod tests {
         ];
 
         for (intersection, (n1, n2)) in xs.iter_mut().zip(expected) {
-            intersection.prepare(&r, intersection.object.transform.inverse(), &all_intersections);
+            intersection.prepare(
+                &r,
+                intersection.object.transform.inverse(),
+                &all_intersections,
+            );
             assert_eq!(intersection.n1.unwrap(), n1);
             assert_eq!(intersection.n2.unwrap(), n2);
         }
@@ -643,7 +770,10 @@ mod tests {
     #[test]
     fn the_schlick_approximation_under_total_internal_reflection() {
         let shape = glass_sphere();
-        let r = ray(point3(0., 0., -std::f32::consts::SQRT_2 * 0.5), vector3(0., 1., 0.));
+        let r = ray(
+            point3(0., 0., -std::f32::consts::SQRT_2 * 0.5),
+            vector3(0., 1., 0.),
+        );
         let mut xs = vec![
             intersection(-std::f32::consts::SQRT_2 * 0.5, &shape),
             intersection(std::f32::consts::SQRT_2 * 0.5, &shape),
@@ -659,10 +789,7 @@ mod tests {
     fn the_schlick_approximation_with_a_perpendicular_viewing_angle() {
         let shape = glass_sphere();
         let r = ray(point3(0., 0., 0.), vector3(0., 1., 0.));
-        let mut xs = vec![
-            intersection(-1., &shape),
-            intersection(1., &shape),
-        ];
+        let mut xs = vec![intersection(-1., &shape), intersection(1., &shape)];
         let all_intersections = xs.clone();
         let i = xs.last_mut().unwrap();
         i.prepare(&r, i.object.transform.inverse(), &all_intersections);
@@ -674,9 +801,7 @@ mod tests {
     fn the_schlick_approximation_with_small_angle_and_n2_greater_than_n1() {
         let shape = glass_sphere();
         let r = ray(point3(0., 0.99, -2.), vector3(0., 0., 1.));
-        let mut xs = vec![
-            intersection(1.8589, &shape),
-        ];
+        let mut xs = vec![intersection(1.8589, &shape)];
         let all_intersections = xs.clone();
         let i = xs.first_mut().unwrap();
         i.prepare(&r, i.object.transform.inverse(), &all_intersections);

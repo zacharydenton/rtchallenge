@@ -73,10 +73,14 @@ fn main() {
     let mut left = sphere();
     left.transform = translate(-0.9, 0.33, -1.25) * scale(0.25, 0.25, 0.25);
     left.material = material();
-    left.material.color = color(1., 0.2, 0.1);
-    left.material.diffuse = 0.7;
-    left.material.specular = 0.3;
-    left.material.reflective = 0.1;
+    left.material.color = color(0.1, 0., 0.);
+    left.material.ambient = 0.7;
+    left.material.diffuse = 0.9;
+    left.material.shininess = 300.;
+    left.material.specular = 0.9;
+    left.material.reflective = 1.0;
+    left.material.transparency = 1.0;
+    left.material.refractive_index = 1.5;
     world.objects.push(left);
 
     let mut left2 = sphere();

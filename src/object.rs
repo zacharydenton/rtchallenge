@@ -13,6 +13,8 @@ pub enum Shape {
         min: f32,
         /// Maximum y-value for the cylinder.
         max: f32,
+        /// Whether to close the cylinder on each end.
+        closed: bool,
     },
     TestShape {},
 }
@@ -57,6 +59,7 @@ pub fn cylinder() -> Object {
         shape: Shape::Cylinder {
             min: -std::f32::INFINITY,
             max: std::f32::INFINITY,
+            closed: false,
         },
         transform: I4,
         material: material(),
@@ -214,6 +217,41 @@ fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
     }
 }
 
+// Helper to reduce duplication in capped cylinder intersection.
+fn check_cap(ray: &Ray, t: f32) -> bool {
+    let x = ray.origin.x + t * ray.direction.x;
+    let z = ray.origin.z + t * ray.direction.z;
+
+    x * x + z * z <= 1. + 1e-2
+}
+
+// Helper which adds capped cylinder intersections.
+fn intersect_caps<'a>(cylinder: &'a Object, ray: &Ray, xs: &mut Intersections<'a>) {
+    if let Shape::Cylinder { min, max, closed } = cylinder.shape {
+        if !closed || ray.direction.y.abs() < 1e-2 {
+            // Caps only matter if the cylinder is closed, and might possibly be intersected by the
+            // ray.
+            return;
+        }
+
+        // Check for an intersection with the lower end cap by intersecting the ray
+        // with the plane at y = min.
+        let tmin = (min - ray.origin.y) / ray.direction.y;
+        if check_cap(ray, tmin) {
+            xs.push(intersection(tmin, cylinder));
+        }
+
+        // Check for an intersection with the upper end cap by intersectin the ray
+        // with the plane y = max.
+        let tmax = (max - ray.origin.y) / ray.direction.y;
+        if check_cap(ray, tmax) {
+            xs.push(intersection(tmax, cylinder));
+        }
+    } else {
+        panic!("Expected a cylinder.");
+    }
+}
+
 impl Object {
     /// Returns the collection of Intersections where the ray intersects the object.
     pub fn intersect(&self, ray: &Ray) -> Intersections {
@@ -266,48 +304,53 @@ impl Object {
                     vec![intersection(tmin, self), intersection(tmax, self)]
                 }
             }
-            Shape::Cylinder { min, max } => {
+            Shape::Cylinder {
+                min,
+                max,
+                closed: _,
+            } => {
+                let mut result = vec![];
+
                 let a = (transformed_ray.direction.x * transformed_ray.direction.x)
                     + (transformed_ray.direction.z * transformed_ray.direction.z);
 
-                if a < 1e-2 {
-                    // Ray is parallel to the y axis.
-                    return vec![];
-                }
+                if a > 1e-3 {
+                    // Ray is not parallel to the y-axis.
 
-                let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x
-                    + 2. * transformed_ray.origin.z * transformed_ray.direction.z;
-                let c = (transformed_ray.origin.x * transformed_ray.origin.x)
-                    + (transformed_ray.origin.z * transformed_ray.origin.z)
-                    - 1.;
-                let discriminant = b * b - 4. * a * c;
+                    let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x
+                        + 2. * transformed_ray.origin.z * transformed_ray.direction.z;
+                    let c = (transformed_ray.origin.x * transformed_ray.origin.x)
+                        + (transformed_ray.origin.z * transformed_ray.origin.z)
+                        - 1.;
+                    let discriminant = b * b - 4. * a * c;
 
-                if discriminant < 0. {
-                    // Ray does not intersect the cylinder.
-                    return vec![];
-                }
-
-                let (tmin, tmax) = {
-                    let t0 = (-b - discriminant.sqrt()) / (2. * a);
-                    let t1 = (-b + discriminant.sqrt()) / (2. * a);
-                    if t0 < t1 {
-                        (t0, t1)
-                    } else {
-                        (t1, t0)
+                    if discriminant < 0. {
+                        // Ray does not intersect the cylinder.
+                        return vec![];
                     }
-                };
 
-                let mut result = vec![];
+                    let (tmin, tmax) = {
+                        let t0 = (-b - discriminant.sqrt()) / (2. * a);
+                        let t1 = (-b + discriminant.sqrt()) / (2. * a);
+                        if t0 < t1 {
+                            (t0, t1)
+                        } else {
+                            (t1, t0)
+                        }
+                    };
 
-                let ymin = transformed_ray.origin.y + tmin * ray.direction.y;
-                if min < ymin && ymin < max {
-                    result.push(intersection(tmin, self));
+                    let ymin = transformed_ray.origin.y + tmin * ray.direction.y;
+                    if min < ymin && ymin < max {
+                        result.push(intersection(tmin, self));
+                    }
+
+                    let ymax = transformed_ray.origin.y + tmax * ray.direction.y;
+                    if min < ymax && ymax < max {
+                        result.push(intersection(tmax, self));
+                    }
                 }
 
-                let ymax = transformed_ray.origin.y + tmax * ray.direction.y;
-                if min < ymax && ymax < max {
-                    result.push(intersection(tmax, self));
-                }
+                intersect_caps(self, &transformed_ray, &mut result);
 
                 result
             }
@@ -346,9 +389,25 @@ impl Object {
                     vector3(0., 0., object_point.z)
                 }
             }
-            Shape::Cylinder { min: _, max: _ } => {
+            Shape::Cylinder {
+                min,
+                max,
+                closed: _,
+            } => {
                 let object_point = inverse_transform * point;
-                vector3(object_point.x, 0., object_point.z)
+
+                // The square of the distance from the y axis.
+                let d2 = object_point.x * object_point.x + object_point.z * object_point.z;
+
+                if d2 < 1. && object_point.y >= max - 1e-2 {
+                    // Hitting the top cap.
+                    vector3(0., 1., 0.)
+                } else if d2 < 1. && object_point.y <= min + 1e-2 {
+                    // Hitting the bottom cap.
+                    vector3(0., -1., 0.)
+                } else {
+                    vector3(object_point.x, 0., object_point.z)
+                }
             }
             Shape::Sphere {} | Shape::TestShape {} => {
                 let object_point = inverse_transform * point;
@@ -549,7 +608,12 @@ mod tests {
     #[test]
     fn the_default_minimum_and_maximum_for_a_cylinder() {
         let cyl = cylinder();
-        if let Shape::Cylinder { min, max } = cyl.shape {
+        if let Shape::Cylinder {
+            min,
+            max,
+            closed: _,
+        } = cyl.shape
+        {
             assert_eq!(min, -std::f32::INFINITY);
             assert_eq!(max, std::f32::INFINITY);
         } else {
@@ -563,6 +627,7 @@ mod tests {
         cyl.shape = Shape::Cylinder {
             min: 1.,
             max: 2.,
+            closed: false,
         };
         let examples = vec![
             (point3(0., 1.5, 0.), vector3(0.1, 1., 0.), 0),
@@ -576,6 +641,64 @@ mod tests {
             let r = ray(point, direction.normalize());
             let xs = cyl.intersect(&r);
             assert_eq!(xs.len(), count);
+        }
+    }
+
+    #[test]
+    fn the_default_closed_value_for_a_cylinder() {
+        let cyl = cylinder();
+        if let Shape::Cylinder {
+            min: _,
+            max: _,
+            closed,
+        } = cyl.shape
+        {
+            assert_eq!(closed, false);
+        } else {
+            panic!();
+        }
+    }
+
+    #[test]
+    fn intersecting_the_caps_of_a_closed_cylinder() {
+        let mut cyl = cylinder();
+        cyl.shape = Shape::Cylinder {
+            min: 1.,
+            max: 2.,
+            closed: true,
+        };
+        let examples = vec![
+            (point3(0., 3., 0.), vector3(0., -1., 0.), 2),
+            (point3(0., 3., -2.), vector3(0., -1., 2.), 2),
+            (point3(0., 4., -2.), vector3(0., -1., 1.), 2),
+            (point3(0., 0., -2.), vector3(0., 1., 2.), 2),
+            (point3(0., -1., -2.), vector3(0., 1., 1.), 2),
+        ];
+        for (point, direction, count) in examples {
+            let r = ray(point, direction.normalize());
+            let xs = cyl.intersect(&r);
+            assert_eq!(xs.len(), count, "{:?}", xs);
+        }
+    }
+
+    #[test]
+    fn the_normal_vector_on_a_cylinders_end_caps() {
+        let mut cyl = cylinder();
+        cyl.shape = Shape::Cylinder {
+            min: 1.,
+            max: 2.,
+            closed: true,
+        };
+        let examples = vec![
+            (point3(0., 1., 0.), vector3(0., -1., 0.)),
+            (point3(0.5, 1., 0.), vector3(0., -1., 0.)),
+            (point3(0., 1., 0.5), vector3(0., -1., 0.)),
+            (point3(0., 2., 0.), vector3(0., 1., 0.)),
+            (point3(0.5, 2., 0.), vector3(0., 1., 0.)),
+            (point3(0., 2., 0.5), vector3(0., 1., 0.)),
+        ];
+        for (point, normal) in examples {
+            assert_eq!(cyl.normal(point), normal, "{:?}", point);
         }
     }
 

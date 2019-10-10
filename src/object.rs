@@ -8,6 +8,7 @@ pub enum Shape {
     Plane {},
     Sphere {},
     Cube {},
+    Cylinder {},
     TestShape {},
 }
 
@@ -40,6 +41,15 @@ pub fn sphere() -> Object {
 pub fn cube() -> Object {
     Object {
         shape: Shape::Cube {},
+        transform: I4,
+        material: material(),
+    }
+}
+
+/// Constructs an infinite cylinder of radius 1 centered at the origin (0, 0, 0).
+pub fn cylinder() -> Object {
+    Object {
+        shape: Shape::Cylinder {},
         transform: I4,
         material: material(),
     }
@@ -248,6 +258,29 @@ impl Object {
                     vec![intersection(tmin, self), intersection(tmax, self)]
                 }
             }
+            Shape::Cylinder {} => {
+                let a = (transformed_ray.direction.x * transformed_ray.direction.x) + (transformed_ray.direction.z * transformed_ray.direction.z);
+
+                if a < 1e-2 {
+                    // Ray is parallel to the y axis.
+                    return vec![];
+                }
+
+                let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x +
+                        2. * transformed_ray.origin.z * transformed_ray.direction.z;
+                let c = (transformed_ray.origin.x * transformed_ray.origin.x) + (transformed_ray.origin.z * transformed_ray.origin.z) - 1.;
+                let discriminant = b * b - 4. * a * c;
+
+                if discriminant < 0. {
+                    // Ray does not intersect the cylinder.
+                    return vec![];
+                }
+
+                let t0 = (-b - discriminant.sqrt()) / (2. * a);
+                let t1 = (-b + discriminant.sqrt()) / (2. * a);
+
+                vec![intersection(t0, self), intersection(t1, self)]
+            },
             Shape::TestShape {} => vec![],
         };
 
@@ -278,7 +311,11 @@ impl Object {
                 } else {
                     vector3(0., 0., object_point.z)
                 }
-            }
+            },
+            Shape::Cylinder {} => {
+                let object_point = inverse_transform * point;
+                vector3(object_point.x, 0., object_point.z)
+            },
             Shape::Sphere {} | Shape::TestShape {} => {
                 let object_point = inverse_transform * point;
                 object_point - point3(0., 0., 0.)
@@ -424,6 +461,54 @@ mod tests {
         ];
         for (point, normal) in examples {
             assert_eq!(c.normal(point), normal);
+        }
+    }
+
+    #[test]
+    fn a_ray_strikes_a_cylinder() {
+        let cyl = cylinder();
+        let examples = vec![
+            (point3(1., 0., -5.), vector3(0., 0., 1.), 5., 5.),
+            (point3(0., 0., -5.), vector3(0., 0., 1.), 4., 6.),
+            (point3(0.5, 0., -5.), vector3(0.1, 1., 1.), 6.80798, 7.08872),
+        ];
+        for (origin, direction, t0, t1) in examples {
+            let direction = direction.normalize();
+            let r = ray(origin, direction);
+            let xs = cyl.intersect(&r);
+            assert_eq!(xs.len(), 2);
+            assert_approx_eq!(xs[0].t, t0, 1e-4);
+            assert_approx_eq!(xs[1].t, t1, 1e-4);
+        }
+    }
+
+    #[test]
+    fn a_ray_misses_a_cylinder() {
+        let cyl = cylinder();
+        let examples = vec![
+            (point3(1., 0., 0.), vector3(0., 1., 0.)),
+            (point3(0., 0., 0.), vector3(0., 1., 0.)),
+            (point3(0., 0., -5.), vector3(1., 1., 1.)),
+        ];
+        for (origin, direction) in examples {
+            let direction = direction.normalize();
+            let r = ray(origin, direction);
+            let xs = cyl.intersect(&r);
+            assert_eq!(xs.len(), 0);
+        }
+    }
+
+    #[test]
+    fn the_normal_vector_on_a_cylinder() {
+        let cyl = cylinder();
+        let examples = vec![
+            (point3(1., 0., 0.), vector3(1., 0., 0.)),
+            (point3(0., 5., -1.), vector3(0., 0., -1.)),
+            (point3(0., -2., 1.), vector3(0., 0., 1.)),
+            (point3(-1., 1., 0.), vector3(-1., 0., 0.)),
+        ];
+        for (point, normal) in examples {
+            assert_eq!(cyl.normal(point), normal);
         }
     }
 

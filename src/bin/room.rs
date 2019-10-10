@@ -64,22 +64,22 @@ fn main() {
 
     let mut leg = cube();
     leg.material = table_material;
-    leg.transform = translate(-2.8, -7.5, -1.8)*  scale(0.2, 2.7, 0.2);
+    leg.transform = translate(-2.8, -7.5, -1.8) * scale(0.2, 2.7, 0.2);
     world.objects.push(leg);
 
     let mut leg2 = cube();
     leg2.material = table_material;
-    leg2.transform = translate(2.8, -7.5, -1.8)*  scale(0.2, 2.7, 0.2);
+    leg2.transform = translate(2.8, -7.5, -1.8) * scale(0.2, 2.7, 0.2);
     world.objects.push(leg2);
 
     let mut leg3 = cube();
     leg3.material = table_material;
-    leg3.transform = translate(-2.8, -7.5, 1.8)*  scale(0.2, 2.7, 0.2);
+    leg3.transform = translate(-2.8, -7.5, 1.8) * scale(0.2, 2.7, 0.2);
     world.objects.push(leg3);
 
     let mut leg4 = cube();
     leg4.material = table_material;
-    leg4.transform = translate(2.8, -7.5, 1.8)*  scale(0.2, 2.7, 0.2);
+    leg4.transform = translate(2.8, -7.5, 1.8) * scale(0.2, 2.7, 0.2);
     world.objects.push(leg4);
 
     let mut container = cube();
@@ -94,4 +94,3 @@ fn main() {
     let canvas = camera.render(&world);
     print!("{}", canvas_to_ppm(canvas));
 }
-

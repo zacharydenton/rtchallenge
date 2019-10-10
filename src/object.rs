@@ -8,7 +8,12 @@ pub enum Shape {
     Plane {},
     Sphere {},
     Cube {},
-    Cylinder {},
+    Cylinder {
+        /// Minimum y-value for the cylinder.
+        min: f32,
+        /// Maximum y-value for the cylinder.
+        max: f32,
+    },
     TestShape {},
 }
 
@@ -49,7 +54,10 @@ pub fn cube() -> Object {
 /// Constructs an infinite cylinder of radius 1 centered at the origin (0, 0, 0).
 pub fn cylinder() -> Object {
     Object {
-        shape: Shape::Cylinder {},
+        shape: Shape::Cylinder {
+            min: -std::f32::INFINITY,
+            max: std::f32::INFINITY,
+        },
         transform: I4,
         material: material(),
     }
@@ -258,17 +266,20 @@ impl Object {
                     vec![intersection(tmin, self), intersection(tmax, self)]
                 }
             }
-            Shape::Cylinder {} => {
-                let a = (transformed_ray.direction.x * transformed_ray.direction.x) + (transformed_ray.direction.z * transformed_ray.direction.z);
+            Shape::Cylinder { min, max } => {
+                let a = (transformed_ray.direction.x * transformed_ray.direction.x)
+                    + (transformed_ray.direction.z * transformed_ray.direction.z);
 
                 if a < 1e-2 {
                     // Ray is parallel to the y axis.
                     return vec![];
                 }
 
-                let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x +
-                        2. * transformed_ray.origin.z * transformed_ray.direction.z;
-                let c = (transformed_ray.origin.x * transformed_ray.origin.x) + (transformed_ray.origin.z * transformed_ray.origin.z) - 1.;
+                let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x
+                    + 2. * transformed_ray.origin.z * transformed_ray.direction.z;
+                let c = (transformed_ray.origin.x * transformed_ray.origin.x)
+                    + (transformed_ray.origin.z * transformed_ray.origin.z)
+                    - 1.;
                 let discriminant = b * b - 4. * a * c;
 
                 if discriminant < 0. {
@@ -276,11 +287,30 @@ impl Object {
                     return vec![];
                 }
 
-                let t0 = (-b - discriminant.sqrt()) / (2. * a);
-                let t1 = (-b + discriminant.sqrt()) / (2. * a);
+                let (tmin, tmax) = {
+                    let t0 = (-b - discriminant.sqrt()) / (2. * a);
+                    let t1 = (-b + discriminant.sqrt()) / (2. * a);
+                    if t0 < t1 {
+                        (t0, t1)
+                    } else {
+                        (t1, t0)
+                    }
+                };
 
-                vec![intersection(t0, self), intersection(t1, self)]
-            },
+                let mut result = vec![];
+
+                let ymin = transformed_ray.origin.y + tmin * ray.direction.y;
+                if min < ymin && ymin < max {
+                    result.push(intersection(tmin, self));
+                }
+
+                let ymax = transformed_ray.origin.y + tmax * ray.direction.y;
+                if min < ymax && ymax < max {
+                    result.push(intersection(tmax, self));
+                }
+
+                result
+            }
             Shape::TestShape {} => vec![],
         };
 
@@ -303,7 +333,11 @@ impl Object {
             Shape::Plane {} => vector3(0., 1., 0.),
             Shape::Cube {} => {
                 let object_point = inverse_transform * point;
-                let maxc = object_point.x.abs().max(object_point.y.abs()).max(object_point.z.abs());
+                let maxc = object_point
+                    .x
+                    .abs()
+                    .max(object_point.y.abs())
+                    .max(object_point.z.abs());
                 if maxc == object_point.x.abs() {
                     vector3(object_point.x, 0., 0.)
                 } else if maxc == object_point.y.abs() {
@@ -311,11 +345,11 @@ impl Object {
                 } else {
                     vector3(0., 0., object_point.z)
                 }
-            },
-            Shape::Cylinder {} => {
+            }
+            Shape::Cylinder { min: _, max: _ } => {
                 let object_point = inverse_transform * point;
                 vector3(object_point.x, 0., object_point.z)
-            },
+            }
             Shape::Sphere {} | Shape::TestShape {} => {
                 let object_point = inverse_transform * point;
                 object_point - point3(0., 0., 0.)
@@ -509,6 +543,39 @@ mod tests {
         ];
         for (point, normal) in examples {
             assert_eq!(cyl.normal(point), normal);
+        }
+    }
+
+    #[test]
+    fn the_default_minimum_and_maximum_for_a_cylinder() {
+        let cyl = cylinder();
+        if let Shape::Cylinder { min, max } = cyl.shape {
+            assert_eq!(min, -std::f32::INFINITY);
+            assert_eq!(max, std::f32::INFINITY);
+        } else {
+            panic!();
+        }
+    }
+
+    #[test]
+    fn intersecting_a_constrained_cylinder() {
+        let mut cyl = cylinder();
+        cyl.shape = Shape::Cylinder {
+            min: 1.,
+            max: 2.,
+        };
+        let examples = vec![
+            (point3(0., 1.5, 0.), vector3(0.1, 1., 0.), 0),
+            (point3(0., 3., -5.), vector3(0., 0., 1.), 0),
+            (point3(0., 0., -5.), vector3(0., 0., 1.), 0),
+            (point3(0., 2., -5.), vector3(0., 0., 1.), 0),
+            (point3(0., 1., -5.), vector3(0., 0., 1.), 0),
+            (point3(0., 1.5, -2.), vector3(0., 0., 1.), 2),
+        ];
+        for (point, direction, count) in examples {
+            let r = ray(point, direction.normalize());
+            let xs = cyl.intersect(&r);
+            assert_eq!(xs.len(), count);
         }
     }
 

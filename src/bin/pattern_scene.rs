@@ -1,112 +1,165 @@
 extern crate rtchallenge;
 use rtchallenge::camera::*;
 use rtchallenge::color::*;
+use rtchallenge::geometry::*;
 use rtchallenge::light::*;
 use rtchallenge::material::*;
 use rtchallenge::object::*;
 use rtchallenge::pattern::*;
 use rtchallenge::ppm::*;
+use rtchallenge::scene::*;
 use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
-use rtchallenge::world::*;
 
 fn main() {
-    let mut camera = camera(1000, 500, std::f32::consts::FRAC_PI_3);
-    camera.set_transform(view_transform(
+    let mut camera = Camera::new(1000, 500, std::f32::consts::FRAC_PI_3);
+    camera.set_transform(Transform::look_at(
         point3(-0.2, 2.8, -1.4),
         point3(0.3, 0.0, 1.),
         vector3(0., 1., 0.),
     ));
 
-    let mut world = world();
-    world
-        .lights
-        .push(point_light(point3(-0.5, 2.7, -1.3), color(1., 1., 1.)));
+    let mut scene = Scene::new();
+    scene.add_light(Light::new(point3(-0.5, 2.7, -1.3), Color::new(1., 1., 1.)));
 
-    let mut floor = plane();
-    let mut floor_material = material();
-    let mut floor_pattern = radial_gradient_pattern(color(0.9, 0.1, 0.6), color(0.1, 0.1, 0.3));
-    floor_pattern.transform = scale(2., 2., 2.);
-    floor_material.pattern = Some(floor_pattern);
-    floor_material.specular = 0.1;
-    floor.material = floor_material;
-    world.objects.push(floor);
+    let mut floor_pattern =
+        radial_gradient_pattern(Color::new(0.9, 0.1, 0.6), Color::new(0.1, 0.1, 0.3));
+    floor_pattern.transform = Transform::new().scale(2., 2., 2.);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .material(Material::new().pattern(floor_pattern).specular(0.1)),
+    );
 
-    let mut wall_material = material();
-    let mut wall_pattern = ring_pattern(color(1., 1., 1.), color(0.1, 0.1, 0.9));
-    wall_pattern.transform = scale(0.2, 0.2, 0.2);
-    wall_material.specular = 0.2;
-    wall_material.pattern = Some(wall_pattern);
+    let mut wall_pattern = ring_pattern(Color::new(1., 1., 1.), Color::new(0.1, 0.1, 0.9));
+    wall_pattern.transform = Transform::new().scale(0.2, 0.2, 0.2);
+    let wall_material = Material::new().pattern(wall_pattern).specular(0.2);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., 1.5)
+                    .rotate_x(std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., -1.5)
+                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., 2.2)
+                    .rotate_y(-std::f32::consts::FRAC_PI_4)
+                    .rotate_x(std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., -2.2)
+                    .rotate_y(std::f32::consts::FRAC_PI_4)
+                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., 2.2)
+                    .rotate_y(std::f32::consts::FRAC_PI_4)
+                    .rotate_x(std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::plane())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., -2.2)
+                    .rotate_y(-std::f32::consts::FRAC_PI_4)
+                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+            )
+            .material(wall_material),
+    );
 
-    let mut back_wall = plane();
-    back_wall.transform = translate(0., 0., 1.5) * rotate_x(std::f32::consts::FRAC_PI_2);
-    back_wall.material = wall_material;
-    world.objects.push(back_wall);
+    let mut middle_pattern = checkers_pattern(Color::new(0.1, 1., 0.5), Color::new(1., 1., 1.));
+    middle_pattern.transform = Transform::new().scale(0.5, 0.5, 0.5);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .scale(0.8, 0.8, 0.8)
+                    .translate(-0.5, 1., 0.5)
+                    .rotate_z(std::f32::consts::FRAC_PI_2),
+            )
+            .material(
+                Material::new()
+                    .pattern(middle_pattern)
+                    .diffuse(0.7)
+                    .specular(0.3),
+            ),
+    );
 
-    let mut front_wall = plane();
-    front_wall.transform = translate(0., 0., -1.5) * rotate_x(-std::f32::consts::FRAC_PI_2);
-    front_wall.material = wall_material;
-    world.objects.push(front_wall);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(1.2, 0.5, 0.)
+                    .scale(0.5, 0.5, 0.5)
+                    .rotate_y(2.)
+                    .rotate_z(1.35),
+            )
+            .material(
+                Material::new()
+                    .pattern(linear_gradient_pattern(
+                        Color::new(1.0, 0.1, 0.2),
+                        Color::new(0.1, 0.4, 0.9),
+                    ))
+                    .diffuse(0.7)
+                    .specular(0.3),
+            ),
+    );
 
-    let mut left_wall = plane();
-    left_wall.transform = translate(0., 0., 2.2)
-        * rotate_y(-std::f32::consts::FRAC_PI_4)
-        * rotate_x(std::f32::consts::FRAC_PI_2);
-    left_wall.material = wall_material;
-    world.objects.push(left_wall);
+    let mut left_pattern = stripe_pattern(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
+    left_pattern.transform = Transform::new()
+        .scale(0.2, 1., 1.)
+        .rotate_y(std::f32::consts::FRAC_PI_4);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .scale(1., 2.5, 1.)
+                    .translate(0.4, 0.33, -0.45)
+                    .scale(0.33, 0.33, 0.33),
+            )
+            .material(
+                Material::new()
+                    .pattern(left_pattern)
+                    .diffuse(0.7)
+                    .specular(0.3),
+            ),
+    );
 
-    let mut left_wall2 = plane();
-    left_wall2.transform = translate(0., 0., -2.2)
-        * rotate_y(std::f32::consts::FRAC_PI_4)
-        * rotate_x(-std::f32::consts::FRAC_PI_2);
-    left_wall2.material = wall_material;
-    world.objects.push(left_wall2);
-
-    let mut right_wall = plane();
-    right_wall.transform = translate(0., 0., 2.2)
-        * rotate_y(std::f32::consts::FRAC_PI_4)
-        * rotate_x(std::f32::consts::FRAC_PI_2);
-    right_wall.material = wall_material;
-    world.objects.push(right_wall);
-
-    let mut right_wall2 = plane();
-    right_wall2.transform = translate(0., 0., -2.2)
-        * rotate_y(-std::f32::consts::FRAC_PI_4)
-        * rotate_x(-std::f32::consts::FRAC_PI_2);
-    right_wall2.material = wall_material;
-    world.objects.push(right_wall2);
-
-    let mut middle = sphere();
-    middle.transform =
-        scale(0.8, 0.8, 0.8) * translate(-0.5, 1., 0.5) * rotate_z(std::f32::consts::FRAC_PI_2);
-    middle.material = material();
-    let mut middle_pattern = checkers_pattern(color(0.1, 1., 0.5), color(1., 1., 1.));
-    middle_pattern.transform = scale(0.5, 0.5, 0.5);
-    middle.material.pattern = Some(middle_pattern);
-    middle.material.diffuse = 0.7;
-    middle.material.specular = 0.3;
-    world.objects.push(middle);
-
-    let mut right = sphere();
-    right.transform =
-        translate(1.2, 0.5, 0.) * scale(0.5, 0.5, 0.5) * rotate_y(2.) * rotate_z(1.35);
-    right.material = material();
-    let right_pattern = linear_gradient_pattern(color(1.0, 0.1, 0.2), color(0.1, 0.4, 0.9));
-    right.material.pattern = Some(right_pattern);
-    right.material.diffuse = 0.7;
-    right.material.specular = 0.3;
-    world.objects.push(right);
-
-    let mut left = sphere();
-    left.transform = scale(1., 2.5, 1.) * translate(0.4, 0.33, -0.45) * scale(0.33, 0.33, 0.33);
-    left.material = material();
-    let mut left_pattern = stripe_pattern(color(1., 0., 0.), color(0.7, 0.8, 0.9));
-    left_pattern.transform = scale(0.2, 1., 1.) * rotate_y(std::f32::consts::FRAC_PI_4);
-    left.material.pattern = Some(left_pattern);
-    left.material.diffuse = 0.7;
-    left.material.specular = 0.3;
-    world.objects.push(left);
-
-    let canvas = camera.render(&world);
+    let canvas = camera.render(scene);
     print!("{}", canvas_to_ppm(canvas));
 }

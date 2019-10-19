@@ -30,13 +30,13 @@ fn main() {
         gravity: vector3(0., -0.1, 0.),
         wind: vector3(-0.01, 0., 0.0),
     };
-    let mut canvas = canvas(900, 550);
-    let color = color(0.8, 0.3, 0.2);
+    let mut canvas = Canvas::new(900, 550);
+    let color = Color::new(0.8, 0.3, 0.2);
 
     while projectile.position.y > 0. {
         let x = projectile.position.x.round() as usize;
         let y = canvas.height - (projectile.position.y.round() as usize);
-        canvas.set_color(x, y, &color);
+        canvas.set_color(x, y, color);
         projectile = tick(&environment, &projectile);
     }
 

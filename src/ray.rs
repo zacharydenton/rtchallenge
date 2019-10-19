@@ -1,6 +1,7 @@
 use crate::matrix::*;
 use crate::tuple::*;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Ray {
     pub origin: Tuple4,
     pub direction: Tuple4,
@@ -52,7 +53,7 @@ mod tests {
     #[test]
     fn translating_a_ray() {
         let r = ray(point3(1., 2., 3.), vector3(0., 1., 0.));
-        let m = translate(3., 4., 5.);
+        let m = Transform::new().translate(3., 4., 5.).local_to_world;
         let r2 = r.transform(m);
         assert_eq!(r2.origin, point3(4., 6., 8.));
         assert_eq!(r2.direction, vector3(0., 1., 0.,));
@@ -61,7 +62,7 @@ mod tests {
     #[test]
     fn scaling_a_ray() {
         let r = ray(point3(1., 2., 3.), vector3(0., 1., 0.));
-        let m = scale(2., 3., 4.);
+        let m = Transform::new().scale(2., 3., 4.).local_to_world;
         let r2 = r.transform(m);
         assert_eq!(r2.origin, point3(2., 6., 12.));
         assert_eq!(r2.direction, vector3(0., 3., 0.,));

@@ -1,106 +1,152 @@
 extern crate rtchallenge;
 use rtchallenge::camera::*;
 use rtchallenge::color::*;
+use rtchallenge::geometry::*;
 use rtchallenge::light::*;
 use rtchallenge::material::*;
 use rtchallenge::object::*;
 use rtchallenge::pattern::*;
 use rtchallenge::ppm::*;
+use rtchallenge::scene::*;
 use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
-use rtchallenge::world::*;
 
 fn main() {
-    let mut camera = camera(1000, 500, std::f32::consts::FRAC_PI_3);
-    camera.set_transform(view_transform(
+    let mut camera = Camera::new(1000, 500, std::f32::consts::FRAC_PI_3);
+    camera.set_transform(Transform::look_at(
         point3(0., 1.5, -5.),
         point3(0., 1., 0.),
         vector3(0., 1., 0.),
     ));
 
-    let mut world = world();
-    world
-        .lights
-        .push(point_light(point3(-10., 10., -10.), color(1., 1., 1.)));
+    let mut scene = Scene::new();
+    scene.add_light(Light::new(point3(-10., 10., -10.), Color::new(1., 1., 1.)));
 
-    let mut floor = sphere();
-    floor.transform = scale(10., 0.01, 10.);
-    let mut floor_material = material();
-    let mut floor_pattern = checkers_pattern(color(1., 1., 1.), color(0., 0., 0.));;
-    floor_pattern.transform = scale(0.05, 0.05, 0.05);
-    floor_material.pattern = Some(floor_pattern);
-    floor_material.specular = 0.;
-    floor.material = floor_material;
-    world.objects.push(floor);
+    let mut floor_pattern = checkers_pattern(Color::new(1., 1., 1.), Color::new(0., 0., 0.));
+    floor_pattern.transform = Transform::new().scale(0.05, 0.05, 0.05);
+    let floor_material = Material::new().pattern(floor_pattern).specular(0.);
 
-    let mut left_wall = sphere();
-    left_wall.transform = translate(0., 0., 5.)
-        * rotate_y(-std::f32::consts::FRAC_PI_4)
-        * rotate_x(std::f32::consts::FRAC_PI_2)
-        * scale(10., 0.01, 10.);
-    left_wall.material = floor_material;
-    world.objects.push(left_wall);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(Transform::new().scale(10., 0.01, 10.))
+            .material(floor_material),
+    );
 
-    let mut right_wall = sphere();
-    right_wall.transform = translate(0., 0., 5.)
-        * rotate_y(std::f32::consts::FRAC_PI_4)
-        * rotate_x(std::f32::consts::FRAC_PI_2)
-        * scale(10., 0.01, 10.);
-    right_wall.material = floor_material;
-    world.objects.push(right_wall);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., 5.)
+                    .rotate_y(-std::f32::consts::FRAC_PI_4)
+                    .rotate_x(std::f32::consts::FRAC_PI_2)
+                    .scale(10., 0.01, 10.),
+            )
+            .material(floor_material),
+    );
 
-    let mut middle = sphere();
-    middle.transform = translate(0.5, 1., -1.1);
-    middle.material = material();
-    middle.material.color = color(0.5, 0.5, 0.5);
-    middle.material.diffuse = 0.3;
-    middle.material.specular = 1.0;
-    middle.material.shininess = 400.;
-    middle.material.reflective = 0.9;
-    middle.material.transparency = 0.9;
-    middle.material.refractive_index = 1.5;
-    world.objects.push(middle);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(0., 0., 5.)
+                    .rotate_y(std::f32::consts::FRAC_PI_4)
+                    .rotate_x(std::f32::consts::FRAC_PI_2)
+                    .scale(10., 0.01, 10.),
+            )
+            .material(floor_material),
+    );
 
-    let mut right = sphere();
-    right.transform = translate(1.2, 1.5, -0.75) * scale(0.5, 0.5, 0.5);
-    right.material = material();
-    right.material.color = color(0.5, 1., 0.1);
-    right.material.diffuse = 0.7;
-    right.material.specular = 0.3;
-    right.material.reflective = 0.1;
-    world.objects.push(right);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(Transform::new().translate(0.5, 1., -1.1))
+            .material(
+                Material::new()
+                    .color(Color::new(0.5, 0.5, 0.5))
+                    .diffuse(0.3)
+                    .specular(1.0)
+                    .shininess(400.)
+                    .reflective(0.9)
+                    .transparency(0.9)
+                    .refractive_index(1.5),
+            ),
+    );
 
-    let mut left = sphere();
-    left.transform = translate(-0.9, 0.33, -1.25) * scale(0.25, 0.25, 0.25);
-    left.material = material();
-    left.material.color = color(0.1, 0., 0.);
-    left.material.ambient = 0.7;
-    left.material.diffuse = 0.9;
-    left.material.shininess = 300.;
-    left.material.specular = 0.9;
-    left.material.reflective = 1.0;
-    left.material.transparency = 1.0;
-    left.material.refractive_index = 1.5;
-    world.objects.push(left);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(1.2, 1.5, -0.75)
+                    .scale(0.5, 0.5, 0.5),
+            )
+            .material(
+                Material::new()
+                    .color(Color::new(0.5, 1., 0.1))
+                    .diffuse(0.7)
+                    .specular(0.3)
+                    .reflective(0.1),
+            ),
+    );
 
-    let mut left2 = sphere();
-    left2.transform = translate(-0.3, 1.73, -1.95) * scale(0.35, 0.35, 0.35);
-    left2.material = material();
-    left2.material.color = color(0.2, 0.1, 1.0);
-    left2.material.diffuse = 0.7;
-    left2.material.specular = 0.3;
-    left2.material.reflective = 0.2;
-    world.objects.push(left2);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(-0.9, 0.33, -1.25)
+                    .scale(0.25, 0.25, 0.25),
+            )
+            .material(
+                Material::new()
+                    .color(Color::new(0.1, 0., 0.))
+                    .ambient(0.7)
+                    .diffuse(0.9)
+                    .shininess(300.)
+                    .specular(0.9)
+                    .reflective(1.0)
+                    .transparency(1.0)
+                    .refractive_index(1.5),
+            ),
+    );
 
-    let mut back = sphere();
-    back.transform = translate(0.5, 0.73, 0.15) * scale(0.35, 0.35, 0.35);
-    back.material = material();
-    back.material.color = color(0.2, 0.1, 1.0);
-    back.material.diffuse = 0.7;
-    back.material.specular = 0.3;
-    back.material.reflective = 0.2;
-    world.objects.push(back);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(-0.3, 1.73, -1.95)
+                    .scale(0.35, 0.35, 0.35),
+            )
+            .material(
+                Material::new()
+                    .color(Color::new(0.2, 0.1, 1.0))
+                    .diffuse(0.7)
+                    .specular(0.3)
+                    .reflective(0.2),
+            ),
+    );
 
-    let canvas = camera.render(&world);
+    scene.add_object(
+        Object::new()
+            .geometry(Geometry::sphere())
+            .transform(
+                Transform::new()
+                    .translate(0.5, 0.73, 0.15)
+                    .scale(0.35, 0.35, 0.35),
+            )
+            .material(
+                Material::new()
+                    .color(Color::new(0.2, 0.1, 1.0))
+                    .diffuse(0.7)
+                    .specular(0.3)
+                    .reflective(0.2),
+            ),
+    );
+
+    let canvas = camera.render(scene);
     print!("{}", canvas_to_ppm(canvas));
 }

@@ -43,6 +43,12 @@ impl Tuple4 {
     /// Returns a normalized (magnitude = 1.0) form of the tuple.
     pub fn normalize(&self) -> Tuple4 {
         let m = self.magnitude();
+
+        if m == 0. {
+            // Prevent divide-by-zero.
+            return *self;
+        }
+
         Tuple4 {
             x: self.x / m,
             y: self.y / m,

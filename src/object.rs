@@ -8,6 +8,14 @@ pub enum Shape {
     Plane {},
     Sphere {},
     Cube {},
+    Cone {
+        /// Minimum y-value for the cone.
+        min: f32,
+        /// Maximum y-value for the cone.
+        max: f32,
+        /// Whether to close the cone on the end.
+        closed: bool,
+    },
     Cylinder {
         /// Minimum y-value for the cylinder.
         min: f32,
@@ -48,6 +56,19 @@ pub fn sphere() -> Object {
 pub fn cube() -> Object {
     Object {
         shape: Shape::Cube {},
+        transform: I4,
+        material: material(),
+    }
+}
+
+/// Constructs an infinite double-napped cone centered at the origin (0, 0, 0).
+pub fn cone() -> Object {
+    Object {
+        shape: Shape::Cone {
+            min: -std::f32::INFINITY,
+            max: std::f32::INFINITY,
+            closed: false,
+        },
         transform: I4,
         material: material(),
     }
@@ -217,17 +238,17 @@ fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
     }
 }
 
-// Helper to reduce duplication in capped cylinder intersection.
-fn check_cap(ray: &Ray, t: f32) -> bool {
+// Helper to reduce duplication in capped cone and cylinder intersection.
+fn check_cap(ray: &Ray, t: f32, radius: f32) -> bool {
     let x = ray.origin.x + t * ray.direction.x;
     let z = ray.origin.z + t * ray.direction.z;
 
-    x * x + z * z <= 1. + 1e-2
+    x * x + z * z <= radius + 1e-2
 }
 
-// Helper which adds capped cylinder intersections.
-fn intersect_caps<'a>(cylinder: &'a Object, ray: &Ray, xs: &mut Intersections<'a>) {
-    if let Shape::Cylinder { min, max, closed } = cylinder.shape {
+// Helper which adds capped cylinder and cone intersections.
+fn intersect_caps<'a>(object: &'a Object, ray: &Ray, xs: &mut Intersections<'a>) {
+    if let Shape::Cylinder { min, max, closed } = object.shape {
         if !closed || ray.direction.y.abs() < 1e-2 {
             // Caps only matter if the cylinder is closed, and might possibly be intersected by the
             // ray.
@@ -237,18 +258,38 @@ fn intersect_caps<'a>(cylinder: &'a Object, ray: &Ray, xs: &mut Intersections<'a
         // Check for an intersection with the lower end cap by intersecting the ray
         // with the plane at y = min.
         let tmin = (min - ray.origin.y) / ray.direction.y;
-        if check_cap(ray, tmin) {
-            xs.push(intersection(tmin, cylinder));
+        if check_cap(ray, tmin, 1.) {
+            xs.push(intersection(tmin, object));
         }
 
         // Check for an intersection with the upper end cap by intersectin the ray
         // with the plane y = max.
         let tmax = (max - ray.origin.y) / ray.direction.y;
-        if check_cap(ray, tmax) {
-            xs.push(intersection(tmax, cylinder));
+        if check_cap(ray, tmax, 1.) {
+            xs.push(intersection(tmax, object));
+        }
+    } else if let Shape::Cone { min, max, closed } = object.shape {
+        if !closed || ray.direction.y.abs() < 1e-2 {
+            // Caps only matter if the cone is closed, and might possibly be intersected by the
+            // ray.
+            return;
+        }
+
+        // Check for an intersection with the lower end cap by intersecting the ray
+        // with the plane at y = min.
+        let tmin = (min - ray.origin.y) / ray.direction.y;
+        if check_cap(ray, tmin, min.abs()) {
+            xs.push(intersection(tmin, object));
+        }
+
+        // Check for an intersection with the upper end cap by intersectin the ray
+        // with the plane y = max.
+        let tmax = (max - ray.origin.y) / ray.direction.y;
+        if check_cap(ray, tmax, max.abs()) {
+            xs.push(intersection(tmax, object));
         }
     } else {
-        panic!("Expected a cylinder.");
+        panic!("Expected a cone or cylinder.");
     }
 }
 
@@ -277,7 +318,11 @@ impl Object {
                 let b = 2. * transformed_ray.direction.dot(sphere_to_ray);
                 let c = sphere_to_ray.dot(sphere_to_ray) - 1.;
 
-                let discriminant = b * b - 4. * a * c;
+                let mut discriminant = b * b - 4. * a * c;
+
+                if discriminant.abs() < 1e-5 {
+                    discriminant = 0.;
+                }
 
                 if discriminant < 0. {
                     vec![]
@@ -304,6 +349,67 @@ impl Object {
                     vec![intersection(tmin, self), intersection(tmax, self)]
                 }
             }
+            Shape::Cone {
+                min,
+                max,
+                closed: _,
+            } => {
+                let mut result = vec![];
+
+                let a = (transformed_ray.direction.x * transformed_ray.direction.x)
+                    - (transformed_ray.direction.y * transformed_ray.direction.y)
+                    + (transformed_ray.direction.z * transformed_ray.direction.z);
+                let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x
+                    - 2. * transformed_ray.origin.y * transformed_ray.direction.y
+                    + 2. * transformed_ray.origin.z * transformed_ray.direction.z;
+                let c = (transformed_ray.origin.x * transformed_ray.origin.x)
+                    - (transformed_ray.origin.y * transformed_ray.origin.y)
+                    + (transformed_ray.origin.z * transformed_ray.origin.z);
+
+                if a.abs() < 1e-3 {
+                    if b.abs() < 1e-3 {
+                        return vec![];
+                    }
+
+                    let t = -c / (2. * b);
+                    result.push(intersection(t, self));
+                } else {
+                    let mut discriminant = b * b - 4. * a * c;
+
+                    if discriminant.abs() < 1e-5 {
+                        discriminant = 0.;
+                    }
+
+                    if discriminant < 0. {
+                        // Ray does not intersect the cone.
+                        return vec![];
+                    }
+
+                    let (tmin, tmax) = {
+                        let t0 = (-b - discriminant.sqrt()) / (2. * a);
+                        let t1 = (-b + discriminant.sqrt()) / (2. * a);
+                        if t0 < t1 {
+                            (t0, t1)
+                        } else {
+                            (t1, t0)
+                        }
+                    };
+
+                    let ymin = transformed_ray.origin.y + tmin * ray.direction.y;
+                    if min < ymin && ymin < max {
+                        result.push(intersection(tmin, self));
+                    }
+
+                    let ymax = transformed_ray.origin.y + tmax * ray.direction.y;
+                    if min < ymax && ymax < max {
+                        result.push(intersection(tmax, self));
+                    }
+                }
+
+                intersect_caps(self, &transformed_ray, &mut result);
+
+                result
+            }
             Shape::Cylinder {
                 min,
                 max,
@@ -314,7 +420,7 @@ impl Object {
                 let a = (transformed_ray.direction.x * transformed_ray.direction.x)
                     + (transformed_ray.direction.z * transformed_ray.direction.z);
 
-                if a > 1e-3 {
+                if a.abs() > 1e-3 {
                     // Ray is not parallel to the y-axis.
 
                     let b = 2. * transformed_ray.origin.x * transformed_ray.direction.x
@@ -322,7 +428,11 @@ impl Object {
                     let c = (transformed_ray.origin.x * transformed_ray.origin.x)
                         + (transformed_ray.origin.z * transformed_ray.origin.z)
                         - 1.;
-                    let discriminant = b * b - 4. * a * c;
+                    let mut discriminant = b * b - 4. * a * c;
+
+                    if discriminant.abs() < 1e-5 {
+                        discriminant = 0.;
+                    }
 
                     if discriminant < 0. {
                         // Ray does not intersect the cylinder.
@@ -387,6 +497,33 @@ impl Object {
                     vector3(0., object_point.y, 0.)
                 } else {
                     vector3(0., 0., object_point.z)
+                }
+            }
+            Shape::Cone {
+                min,
+                max,
+                closed: _,
+            } => {
+                let object_point = inverse_transform * point;
+
+                // The square of the distance from the y axis.
+                let d2 = object_point.x * object_point.x + object_point.z * object_point.z;
+
+                if d2 < max.abs() && object_point.y >= max - 1e-2 {
+                    // Hitting the top cap.
+                    vector3(0., 1., 0.)
+                } else if d2 < min.abs() && object_point.y <= min + 1e-2 {
+                    // Hitting the bottom cap.
+                    vector3(0., -1., 0.)
+                } else {
+                    let mut y =
+                        (object_point.x * object_point.x + object_point.z * object_point.z).sqrt();
+
+                    if object_point.y > 0. {
+                        y = -y;
+                    }
+
+                    vector3(object_point.x, y, object_point.z)
                 }
             }
             Shape::Cylinder {
@@ -699,6 +836,74 @@ mod tests {
         ];
         for (point, normal) in examples {
             assert_eq!(cyl.normal(point), normal, "{:?}", point);
+        }
+    }
+
+    #[test]
+    fn intersecting_a_cone_with_a_ray() {
+        let shape = cone();
+        let examples = vec![
+            (point3(0., 0., -5.), vector3(0., 0., 1.), 5., 5.),
+            (point3(0., 0., -5.), vector3(1., 1., 1.), 8.66025, 8.66025),
+            (
+                point3(1., 1., -5.),
+                vector3(-0.5, -1., 1.),
+                4.55006,
+                49.44994,
+            ),
+        ];
+        for (origin, direction, t0, t1) in examples {
+            let r = ray(origin, direction.normalize());
+            let xs = shape.intersect(&r);
+            assert_eq!(xs.len(), 2, "{:?}", direction);
+            assert_approx_eq!(xs[0].t, t0, 1e-3);
+            assert_approx_eq!(xs[1].t, t1, 1e-3);
+        }
+    }
+
+    #[test]
+    fn intersecting_a_cone_with_a_ray_parallel_to_one_of_its_halves() {
+        let shape = cone();
+        let direction = vector3(0., 1., 1.).normalize();
+        let r = ray(point3(0., 0., -1.), direction);
+        let xs = shape.intersect(&r);
+        assert_eq!(xs.len(), 1);
+        assert_approx_eq!(xs[0].t, 0.35355, 1e-3);
+    }
+
+    #[test]
+    fn intersecting_a_cones_end_caps() {
+        let mut con = cone();
+        con.shape = Shape::Cone {
+            min: -0.5,
+            max: 0.5,
+            closed: true,
+        };
+        let examples = vec![
+            (point3(0., 0., -5.), vector3(0., 1., 0.), 0),
+            (point3(0., 0., -0.25), vector3(0., 1., 1.), 2),
+            (point3(0., 0., -0.25), vector3(0., 1., 0.), 4),
+        ];
+        for (origin, direction, count) in examples {
+            let r = ray(origin, direction.normalize());
+            let xs = con.intersect(&r);
+            assert_eq!(xs.len(), count);
+        }
+    }
+
+    #[test]
+    fn computing_the_normal_vector_on_a_cone() {
+        let shape = cone();
+        let examples = vec![
+            (point3(0., 0., 0.), vector3(0., 0., 0.)),
+            (
+                point3(1., 1., 1.),
+                vector3(1., -std::f32::consts::SQRT_2, 1.),
+            ),
+            (point3(-1., -1., 0.), vector3(-1., 1., 0.)),
+        ];
+        for (point, normal) in examples {
+            assert_eq!(shape.normal(point), normal.normalize());
         }
     }
 

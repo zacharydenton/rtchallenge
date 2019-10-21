@@ -16,7 +16,7 @@ pub fn ray(origin: Tuple4, direction: Tuple4) -> Ray {
 
 impl Ray {
     /// Computes the point at the given distance t along the ray.
-    pub fn position(&self, t: f32) -> Tuple4 {
+    pub fn position(&self, t: f64) -> Tuple4 {
         self.origin + self.direction * t
     }
 

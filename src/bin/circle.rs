@@ -14,16 +14,16 @@ fn main() {
 
     for y in 0..canvas.height {
         for x in 0..canvas.width {
-            let u = (x as f32 - canvas.width as f32 / 2.) / (canvas.width as f32 / 2.);
-            let v = -(y as f32 - canvas.width as f32 / 2.) / (canvas.width as f32 / 2.);
+            let u = (x as f64 - canvas.width as f64 / 2.) / (canvas.width as f64 / 2.);
+            let v = -(y as f64 - canvas.width as f64 / 2.) / (canvas.width as f64 / 2.);
             let target = point3(u, v, 0.);
             let direction = target - origin;
 
             match sphere.intersect(ray(origin, direction)).next() {
                 Some(_) => {
-                    let x = (canvas.width as f32 / 2. + target.x * canvas.width as f32 / 2.).round()
+                    let x = (canvas.width as f64 / 2. + target.x * canvas.width as f64 / 2.).round()
                         as usize;
-                    let y = (canvas.height as f32 / 2. - target.y * canvas.height as f32 / 2.)
+                    let y = (canvas.height as f64 / 2. - target.y * canvas.height as f64 / 2.)
                         .round() as usize;
                     canvas.set_color(x, y, color);
                 }

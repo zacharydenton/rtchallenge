@@ -2,13 +2,13 @@ use std::ops;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Color {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 impl Color {
-    pub fn new(r: f32, g: f32, b: f32) -> Self {
+    pub fn new(r: f64, g: f64, b: f64) -> Self {
         Color { r, g, b }
     }
 
@@ -58,10 +58,10 @@ impl ops::Mul for Color {
     }
 }
 
-impl ops::Mul<f32> for Color {
+impl ops::Mul<f64> for Color {
     type Output = Color;
 
-    fn mul(self, other: f32) -> Color {
+    fn mul(self, other: f64) -> Color {
         Color {
             r: self.r * other,
             g: self.g * other,

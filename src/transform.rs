@@ -41,7 +41,7 @@ impl Transform {
     }
 
     /// Translates by the specified amount in each axis.
-    pub fn translate(mut self, x: f32, y: f32, z: f32) -> Self {
+    pub fn translate(mut self, x: f64, y: f64, z: f64) -> Self {
         let translate_matrix = matrix4(1., 0., 0., x, 0., 1., 0., y, 0., 0., 1., z, 0., 0., 0., 1.);
         self.local_to_world = self.local_to_world * translate_matrix;
         self.world_to_local = self.local_to_world.inverse();
@@ -49,7 +49,7 @@ impl Transform {
     }
 
     /// Rotates around the x-axis by the angle in radians.
-    pub fn rotate_x(mut self, radians: f32) -> Self {
+    pub fn rotate_x(mut self, radians: f64) -> Self {
         let rotation_matrix = matrix4(
             1.,
             0.,
@@ -74,7 +74,7 @@ impl Transform {
     }
 
     /// Rotates around the y-axis by the angle in radians.
-    pub fn rotate_y(mut self, radians: f32) -> Self {
+    pub fn rotate_y(mut self, radians: f64) -> Self {
         let rotation_matrix = matrix4(
             radians.cos(),
             0.,
@@ -99,7 +99,7 @@ impl Transform {
     }
 
     /// Rotates around the z-axis by the angle in radians.
-    pub fn rotate_z(mut self, radians: f32) -> Self {
+    pub fn rotate_z(mut self, radians: f64) -> Self {
         let rotation_matrix = matrix4(
             radians.cos(),
             -radians.sin(),
@@ -124,7 +124,7 @@ impl Transform {
     }
 
     /// Scales by the specified amount in each axis.
-    pub fn scale(mut self, x: f32, y: f32, z: f32) -> Self {
+    pub fn scale(mut self, x: f64, y: f64, z: f64) -> Self {
         let scale_matrix = matrix4(x, 0., 0., 0., 0., y, 0., 0., 0., 0., z, 0., 0., 0., 0., 1.);
         self.local_to_world = self.local_to_world * scale_matrix;
         self.world_to_local = self.local_to_world.inverse();
@@ -132,7 +132,7 @@ impl Transform {
     }
 
     /// Applies the shear transformation.
-    pub fn shear(mut self, xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Self {
+    pub fn shear(mut self, xy: f64, xz: f64, yx: f64, yz: f64, zx: f64, zy: f64) -> Self {
         let shear_matrix = matrix4(
             1., xy, xz, 0., yx, 1., yz, 0., zx, zy, 1., 0., 0., 0., 0., 1.,
         );
@@ -199,13 +199,13 @@ mod tests {
     #[test]
     fn rotating_a_point_around_the_x_axis() {
         let p = point3(0., 1., 0.);
-        let half_quarter = Transform::new().rotate_x(std::f32::consts::FRAC_PI_4);
-        let full_quarter = Transform::new().rotate_x(std::f32::consts::FRAC_PI_2);
+        let half_quarter = Transform::new().rotate_x(std::f64::consts::FRAC_PI_4);
+        let full_quarter = Transform::new().rotate_x(std::f64::consts::FRAC_PI_2);
 
         let half_rotation = half_quarter.local_to_world * p;
         assert_approx_eq!(half_rotation.x, 0.);
-        assert_approx_eq!(half_rotation.y, std::f32::consts::SQRT_2 / 2.);
-        assert_approx_eq!(half_rotation.z, std::f32::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.y, std::f64::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.z, std::f64::consts::SQRT_2 / 2.);
 
         let full_rotation = full_quarter.local_to_world * p;
         assert_approx_eq!(full_rotation.x, 0.);
@@ -216,13 +216,13 @@ mod tests {
     #[test]
     fn rotating_a_point_around_the_y_axis() {
         let p = point3(0., 0., 1.);
-        let half_quarter = Transform::new().rotate_y(std::f32::consts::FRAC_PI_4);
-        let full_quarter = Transform::new().rotate_y(std::f32::consts::FRAC_PI_2);
+        let half_quarter = Transform::new().rotate_y(std::f64::consts::FRAC_PI_4);
+        let full_quarter = Transform::new().rotate_y(std::f64::consts::FRAC_PI_2);
 
         let half_rotation = half_quarter.local_to_world * p;
-        assert_approx_eq!(half_rotation.x, std::f32::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.x, std::f64::consts::SQRT_2 / 2.);
         assert_approx_eq!(half_rotation.y, 0.);
-        assert_approx_eq!(half_rotation.z, std::f32::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.z, std::f64::consts::SQRT_2 / 2.);
 
         let full_rotation = full_quarter.local_to_world * p;
         assert_approx_eq!(full_rotation.x, 1.);
@@ -233,12 +233,12 @@ mod tests {
     #[test]
     fn rotating_a_point_around_the_z_axis() {
         let p = point3(0., 1., 0.);
-        let half_quarter = Transform::new().rotate_z(std::f32::consts::FRAC_PI_4);
-        let full_quarter = Transform::new().rotate_z(std::f32::consts::FRAC_PI_2);
+        let half_quarter = Transform::new().rotate_z(std::f64::consts::FRAC_PI_4);
+        let full_quarter = Transform::new().rotate_z(std::f64::consts::FRAC_PI_2);
 
         let half_rotation = half_quarter.local_to_world * p;
-        assert_approx_eq!(half_rotation.x, -std::f32::consts::SQRT_2 / 2.);
-        assert_approx_eq!(half_rotation.y, std::f32::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.x, -std::f64::consts::SQRT_2 / 2.);
+        assert_approx_eq!(half_rotation.y, std::f64::consts::SQRT_2 / 2.);
         assert_approx_eq!(half_rotation.z, 0.);
 
         let full_rotation = full_quarter.local_to_world * p;
@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn individual_transformations_are_applied_in_sequence() {
         let p = point3(1., 0., 1.);
-        let a = Transform::new().rotate_x(std::f32::consts::FRAC_PI_2);
+        let a = Transform::new().rotate_x(std::f64::consts::FRAC_PI_2);
         let b = Transform::new().scale(5., 5., 5.);
         let c = Transform::new().translate(10., 5., 7.);
 
@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn chained_transformations_must_be_applied_in_reverse_order() {
         let p = point3(1., 0., 1.);
-        let a = Transform::new().rotate_x(std::f32::consts::FRAC_PI_2);
+        let a = Transform::new().rotate_x(std::f64::consts::FRAC_PI_2);
         let b = Transform::new().scale(5., 5., 5.);
         let c = Transform::new().translate(10., 5., 7.);
 
@@ -334,7 +334,7 @@ mod tests {
         let p = point3(1., 0., 1.);
         let t = Transform::new()
             .translate(10., 5., 7.)
-            .rotate_x(std::f32::consts::FRAC_PI_2)
+            .rotate_x(std::f64::consts::FRAC_PI_2)
             .scale(5., 5., 5.);
 
         let p2 = t.local_to_world * p;

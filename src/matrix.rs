@@ -7,19 +7,19 @@ use std::ops;
 /// | y0 | y1 |
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix2 {
-    pub x0: f32,
-    pub y0: f32,
-    pub x1: f32,
-    pub y1: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub x1: f64,
+    pub y1: f64,
 }
 
-pub fn matrix2(x0: f32, x1: f32, y0: f32, y1: f32) -> Matrix2 {
+pub fn matrix2(x0: f64, x1: f64, y0: f64, y1: f64) -> Matrix2 {
     Matrix2 { x0, y0, x1, y1 }
 }
 
 impl Matrix2 {
     #[inline]
-    pub fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f64 {
         self.x0 * self.y1 - self.x1 * self.y0
     }
 }
@@ -38,27 +38,27 @@ pub const I2: Matrix2 = Matrix2 {
 /// | z0 | z1 | z2 |
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix3 {
-    pub x0: f32,
-    pub y0: f32,
-    pub z0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub z1: f32,
-    pub x2: f32,
-    pub y2: f32,
-    pub z2: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub z0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub z1: f64,
+    pub x2: f64,
+    pub y2: f64,
+    pub z2: f64,
 }
 
 pub fn matrix3(
-    x0: f32,
-    x1: f32,
-    x2: f32,
-    y0: f32,
-    y1: f32,
-    y2: f32,
-    z0: f32,
-    z1: f32,
-    z2: f32,
+    x0: f64,
+    x1: f64,
+    x2: f64,
+    y0: f64,
+    y1: f64,
+    y2: f64,
+    z0: f64,
+    z1: f64,
+    z2: f64,
 ) -> Matrix3 {
     Matrix3 {
         x0,
@@ -135,7 +135,7 @@ impl Matrix3 {
     }
 
     #[inline]
-    pub fn minor(&self, row: usize, column: usize) -> f32 {
+    pub fn minor(&self, row: usize, column: usize) -> f64 {
         match (row, column) {
             (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
             (0, 1) => (self.y0 * self.z2 - self.y2 * self.z0),
@@ -151,7 +151,7 @@ impl Matrix3 {
     }
 
     #[inline]
-    pub fn cofactor(&self, row: usize, column: usize) -> f32 {
+    pub fn cofactor(&self, row: usize, column: usize) -> f64 {
         match (row, column) {
             (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
             (0, 1) => -(self.y0 * self.z2 - self.y2 * self.z0),
@@ -167,7 +167,7 @@ impl Matrix3 {
     }
 
     #[inline]
-    pub fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f64 {
         self.x0 * (self.y1 * self.z2 - self.y2 * self.z1)
             - self.x1 * (self.y0 * self.z2 - self.y2 * self.z0)
             + self.x2 * (self.y0 * self.z1 - self.y1 * self.z0)
@@ -194,41 +194,41 @@ pub const I3: Matrix3 = Matrix3 {
 /// | w0 | w1 | w2 | w3 |
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Matrix4 {
-    pub x0: f32,
-    pub y0: f32,
-    pub z0: f32,
-    pub w0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub z1: f32,
-    pub w1: f32,
-    pub x2: f32,
-    pub y2: f32,
-    pub z2: f32,
-    pub w2: f32,
-    pub x3: f32,
-    pub y3: f32,
-    pub z3: f32,
-    pub w3: f32,
+    pub x0: f64,
+    pub y0: f64,
+    pub z0: f64,
+    pub w0: f64,
+    pub x1: f64,
+    pub y1: f64,
+    pub z1: f64,
+    pub w1: f64,
+    pub x2: f64,
+    pub y2: f64,
+    pub z2: f64,
+    pub w2: f64,
+    pub x3: f64,
+    pub y3: f64,
+    pub z3: f64,
+    pub w3: f64,
 }
 
 pub fn matrix4(
-    x0: f32,
-    x1: f32,
-    x2: f32,
-    x3: f32,
-    y0: f32,
-    y1: f32,
-    y2: f32,
-    y3: f32,
-    z0: f32,
-    z1: f32,
-    z2: f32,
-    z3: f32,
-    w0: f32,
-    w1: f32,
-    w2: f32,
-    w3: f32,
+    x0: f64,
+    x1: f64,
+    x2: f64,
+    x3: f64,
+    y0: f64,
+    y1: f64,
+    y2: f64,
+    y3: f64,
+    z0: f64,
+    z1: f64,
+    z2: f64,
+    z3: f64,
+    w0: f64,
+    w1: f64,
+    w2: f64,
+    w3: f64,
 ) -> Matrix4 {
     Matrix4 {
         x0,
@@ -473,11 +473,11 @@ impl Matrix4 {
         }
     }
 
-    pub fn minor(&self, row: usize, column: usize) -> f32 {
+    pub fn minor(&self, row: usize, column: usize) -> f64 {
         self.submatrix(row, column).determinant()
     }
 
-    pub fn cofactor(&self, row: usize, column: usize) -> f32 {
+    pub fn cofactor(&self, row: usize, column: usize) -> f64 {
         if row + column & 1 == 1 {
             -self.minor(row, column)
         } else {
@@ -485,7 +485,7 @@ impl Matrix4 {
         }
     }
 
-    pub fn determinant(&self) -> f32 {
+    pub fn determinant(&self) -> f64 {
         self.x0 * self.minor(0, 0) - self.x1 * self.minor(0, 1) + self.x2 * self.minor(0, 2)
             - self.x3 * self.minor(0, 3)
     }

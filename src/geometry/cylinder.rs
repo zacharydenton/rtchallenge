@@ -1,6 +1,6 @@
 use crate::geometry::*;
 
-pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
+pub fn intersect(ray: Ray, min: f64, max: f64, closed: bool) -> Intersections {
     let mut result = Intersections::new();
 
     let a = (ray.direction.x * ray.direction.x) + (ray.direction.z * ray.direction.z);
@@ -47,7 +47,7 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
     result
 }
 
-pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
+pub fn normal_at(point: Tuple4, min: f64, max: f64, _closed: bool) -> Tuple4 {
     // The square of the distance from the y axis.
     let d2 = point.x * point.x + point.z * point.z;
 
@@ -63,7 +63,7 @@ pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
 }
 
 // Helper to reduce duplication in capped cylinder intersection.
-fn check_cap(ray: Ray, t: f32) -> bool {
+fn check_cap(ray: Ray, t: f64) -> bool {
     let x = ray.origin.x + t * ray.direction.x;
     let z = ray.origin.z + t * ray.direction.z;
 
@@ -71,7 +71,7 @@ fn check_cap(ray: Ray, t: f32) -> bool {
 }
 
 // Helper which adds capped cylinder intersections.
-fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f32, max: f32, closed: bool) {
+fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f64, max: f64, closed: bool) {
     if !closed || ray.direction.y.abs() < 1e-3 {
         // Caps only matter if the cylinder is closed, and might possibly be intersected
         // by the ray.
@@ -108,7 +108,7 @@ mod tests {
         for (origin, direction, t0, t1) in examples {
             let direction = direction.normalize();
             let r = ray(origin, direction);
-            let xs = intersect(r, -std::f32::INFINITY, std::f32::INFINITY, false);
+            let xs = intersect(r, -std::f64::INFINITY, std::f64::INFINITY, false);
             assert_eq!(xs.len(), 2);
             assert_approx_eq!(xs.t0, t0, 1e-4);
             assert_approx_eq!(xs.t1, t1, 1e-4);
@@ -125,7 +125,7 @@ mod tests {
         for (origin, direction) in examples {
             let direction = direction.normalize();
             let r = ray(origin, direction);
-            let xs = intersect(r, -std::f32::INFINITY, std::f32::INFINITY, false);
+            let xs = intersect(r, -std::f64::INFINITY, std::f64::INFINITY, false);
             assert_eq!(xs.len(), 0);
         }
     }
@@ -140,7 +140,7 @@ mod tests {
         ];
         for (point, normal) in examples {
             assert_eq!(
-                normal_at(point, -std::f32::INFINITY, std::f32::INFINITY, false),
+                normal_at(point, -std::f64::INFINITY, std::f64::INFINITY, false),
                 normal
             );
         }

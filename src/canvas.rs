@@ -20,9 +20,9 @@ impl Canvas {
 
     pub fn get_color(&self, x: usize, y: usize) -> Color {
         let i = 3 * (self.width * y + x);
-        let r = self.data[i + 0] as f32 / 255.0;
-        let g = self.data[i + 1] as f32 / 255.0;
-        let b = self.data[i + 2] as f32 / 255.0;
+        let r = self.data[i + 0] as f64 / 255.0;
+        let g = self.data[i + 1] as f64 / 255.0;
+        let b = self.data[i + 2] as f64 / 255.0;
 
         Color { r, g, b }
     }

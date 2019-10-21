@@ -12,7 +12,7 @@ use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
 fn main() {
-    let mut camera = Camera::new(1000, 500, std::f32::consts::FRAC_PI_3);
+    let mut camera = Camera::new(1000, 500, std::f64::consts::FRAC_PI_3);
     camera.set_transform(Transform::look_at(
         point3(-4.8, 0.8, -4.8),
         point3(-2., -3., -2.),
@@ -40,7 +40,7 @@ fn main() {
 
     let mut walls_pattern = ring_pattern(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
     walls_pattern.transform = Transform::new()
-        .rotate_z(std::f32::consts::FRAC_PI_6)
+        .rotate_z(std::f64::consts::FRAC_PI_6)
         .scale(0.01, 0.01, 0.01);
     scene.add_object(
         Object::new()

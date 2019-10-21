@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn the_normal_on_a_sphere_at_a_nonaxial_point() {
-        let root3over3 = (3 as f32).sqrt() / 3.;
+        let root3over3 = (3 as f64).sqrt() / 3.;
         let n = normal_at(point3(root3over3, root3over3, root3over3));
         assert_approx_eq!(n.x, root3over3);
         assert_approx_eq!(n.y, root3over3);

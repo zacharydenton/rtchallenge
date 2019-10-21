@@ -15,17 +15,17 @@ pub enum Geometry {
     Cube,
     Cone {
         /// Minimum y-value for the cone.
-        min: f32,
+        min: f64,
         /// Maximum y-value for the cone.
-        max: f32,
+        max: f64,
         /// Whether to close the cone on the end.
         closed: bool,
     },
     Cylinder {
         /// Minimum y-value for the cylinder.
-        min: f32,
+        min: f64,
         /// Maximum y-value for the cylinder.
-        max: f32,
+        max: f64,
         /// Whether to close the cylinder on each end.
         closed: bool,
     },
@@ -47,16 +47,16 @@ impl Geometry {
 
     pub fn cone() -> Self {
         Geometry::Cone {
-            min: -std::f32::INFINITY,
-            max: std::f32::INFINITY,
+            min: -std::f64::INFINITY,
+            max: std::f64::INFINITY,
             closed: false,
         }
     }
 
     pub fn cylinder() -> Self {
         Geometry::Cylinder {
-            min: -std::f32::INFINITY,
-            max: std::f32::INFINITY,
+            min: -std::f64::INFINITY,
+            max: std::f64::INFINITY,
             closed: false,
         }
     }
@@ -104,8 +104,8 @@ mod tests {
             closed: _,
         } = cyl
         {
-            assert_eq!(min, -std::f32::INFINITY);
-            assert_eq!(max, std::f32::INFINITY);
+            assert_eq!(min, -std::f64::INFINITY);
+            assert_eq!(max, std::f64::INFINITY);
         } else {
             panic!();
         }

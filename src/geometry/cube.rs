@@ -29,7 +29,7 @@ pub fn normal_at(point: Tuple4) -> Tuple4 {
 }
 
 // Cube intersection helper.
-fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
+fn check_axis(origin: f64, direction: f64) -> (f64, f64) {
     let tmin_numerator = -1. - origin;
     let tmax_numerator = 1. - origin;
 
@@ -37,8 +37,8 @@ fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
         (tmin_numerator / direction, tmax_numerator / direction)
     } else {
         (
-            tmin_numerator * std::f32::INFINITY,
-            tmax_numerator * std::f32::INFINITY,
+            tmin_numerator * std::f64::INFINITY,
+            tmax_numerator * std::f64::INFINITY,
         )
     };
 

@@ -3,24 +3,24 @@ use std::ops;
 /// A 4-element tuple, used for representing points and vectors.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Tuple4 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub w: f64,
 }
 
 /// Constructs a Tuple4.
-pub fn tuple4(x: f32, y: f32, z: f32, w: f32) -> Tuple4 {
+pub fn tuple4(x: f64, y: f64, z: f64, w: f64) -> Tuple4 {
     Tuple4 { x, y, z, w }
 }
 
 /// Constructs a Tuple4 with w = 1.0 (aka a point).
-pub fn point3(x: f32, y: f32, z: f32) -> Tuple4 {
+pub fn point3(x: f64, y: f64, z: f64) -> Tuple4 {
     Tuple4 { x, y, z, w: 1.0 }
 }
 
 /// Constructs a Tuple4 with w = 0.0 (aka a vector).
-pub fn vector3(x: f32, y: f32, z: f32) -> Tuple4 {
+pub fn vector3(x: f64, y: f64, z: f64) -> Tuple4 {
     Tuple4 { x, y, z, w: 0.0 }
 }
 
@@ -36,7 +36,7 @@ impl Tuple4 {
     }
 
     /// The distance represented by the tuple.
-    pub fn magnitude(&self) -> f32 {
+    pub fn magnitude(&self) -> f64 {
         (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
 
@@ -66,7 +66,7 @@ impl Tuple4 {
     ///
     /// If the two vectors are unit vectors, the dot product is the cosine of
     /// the angle between them.
-    pub fn dot(&self, other: Tuple4) -> f32 {
+    pub fn dot(&self, other: Tuple4) -> f64 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
@@ -135,10 +135,10 @@ impl ops::Neg for Tuple4 {
     }
 }
 
-impl ops::Mul<f32> for Tuple4 {
+impl ops::Mul<f64> for Tuple4 {
     type Output = Tuple4;
 
-    fn mul(self, other: f32) -> Tuple4 {
+    fn mul(self, other: f64) -> Tuple4 {
         Tuple4 {
             x: self.x * other,
             y: self.y * other,
@@ -148,10 +148,10 @@ impl ops::Mul<f32> for Tuple4 {
     }
 }
 
-impl ops::Div<f32> for Tuple4 {
+impl ops::Div<f64> for Tuple4 {
     type Output = Tuple4;
 
-    fn div(self, other: f32) -> Tuple4 {
+    fn div(self, other: f64) -> Tuple4 {
         Tuple4 {
             x: self.x / other,
             y: self.y / other,
@@ -261,8 +261,8 @@ mod tests {
         assert_eq!(vector3(1., 0., 0.).magnitude(), 1.);
         assert_eq!(vector3(0., 1., 0.).magnitude(), 1.);
         assert_eq!(vector3(0., 0., 1.).magnitude(), 1.);
-        assert_eq!(vector3(1., 2., 3.).magnitude(), (14 as f32).sqrt());
-        assert_eq!(vector3(-1., -2., -3.).magnitude(), (14 as f32).sqrt());
+        assert_eq!(vector3(1., 2., 3.).magnitude(), (14 as f64).sqrt());
+        assert_eq!(vector3(-1., -2., -3.).magnitude(), (14 as f64).sqrt());
     }
 
     #[test]
@@ -271,9 +271,9 @@ mod tests {
         assert_eq!(
             vector3(1., 2., 3.).normalize(),
             vector3(
-                1. / (14 as f32).sqrt(),
-                2. / (14 as f32).sqrt(),
-                3. / (14 as f32).sqrt(),
+                1. / (14 as f64).sqrt(),
+                2. / (14 as f64).sqrt(),
+                3. / (14 as f64).sqrt(),
             )
         );
     }
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn reflecting_a_vector_off_a_slanted_surface() {
         let v = vector3(0., -1., 0.);
-        let root2over2 = std::f32::consts::SQRT_2 / 2.;
+        let root2over2 = std::f64::consts::SQRT_2 / 2.;
         let n = vector3(root2over2, root2over2, 0.);
         let r = v.reflect(n);
         assert_approx_eq!(r.x, 1.);

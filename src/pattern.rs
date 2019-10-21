@@ -260,24 +260,24 @@ mod tests {
         );
 
         let c1 = pattern.at(point3(
-            0.25 * std::f32::consts::FRAC_1_SQRT_2,
+            0.25 * std::f64::consts::FRAC_1_SQRT_2,
             0.,
-            0.25 * std::f32::consts::FRAC_1_SQRT_2,
+            0.25 * std::f64::consts::FRAC_1_SQRT_2,
         ));
         let c2 = pattern.at(point3(
-            0.5 * std::f32::consts::FRAC_1_SQRT_2,
+            0.5 * std::f64::consts::FRAC_1_SQRT_2,
             0.,
-            0.5 * std::f32::consts::FRAC_1_SQRT_2,
+            0.5 * std::f64::consts::FRAC_1_SQRT_2,
         ));
         let c3 = pattern.at(point3(
-            0.75 * std::f32::consts::FRAC_1_SQRT_2,
+            0.75 * std::f64::consts::FRAC_1_SQRT_2,
             0.,
-            0.75 * std::f32::consts::FRAC_1_SQRT_2,
+            0.75 * std::f64::consts::FRAC_1_SQRT_2,
         ));
         let c4 = pattern.at(point3(
-            std::f32::consts::FRAC_1_SQRT_2,
+            std::f64::consts::FRAC_1_SQRT_2 - std::f64::EPSILON,
             0.,
-            std::f32::consts::FRAC_1_SQRT_2,
+            std::f64::consts::FRAC_1_SQRT_2 - std::f64::EPSILON,
         ));
 
         assert_approx_eq!(c1.r, 0.75);

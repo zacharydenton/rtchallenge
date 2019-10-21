@@ -169,7 +169,7 @@ impl Scene {
     /// Returns the indexes of refraction of the materials on either side of a
     /// ray-object intersection, with n1 belonging to the material being
     /// exited, and n2 belonging to the material being entered.
-    pub fn refractive_indexes(&self, world_ray: Ray, intersection: Intersection) -> (f32, f32) {
+    pub fn refractive_indexes(&self, world_ray: Ray, intersection: Intersection) -> (f64, f64) {
         let mut n1 = 1.0;
         let mut n2 = 1.0;
 
@@ -228,7 +228,7 @@ impl Scene {
 }
 
 /// Computes the Schlick approximation for the given intersection.
-pub fn schlick(eyev: Tuple4, normalv: Tuple4, n1: f32, n2: f32) -> f32 {
+pub fn schlick(eyev: Tuple4, normalv: Tuple4, n1: f64, n2: f64) -> f64 {
     let mut cos = eyev.dot(normalv);
 
     if n1 > n2 {
@@ -473,8 +473,8 @@ mod tests {
             point3(0., 0., -3.),
             vector3(
                 0.,
-                -std::f32::consts::SQRT_2 * 0.5,
-                std::f32::consts::SQRT_2 * 0.5,
+                -std::f64::consts::SQRT_2 * 0.5,
+                std::f64::consts::SQRT_2 * 0.5,
             ),
         );
 
@@ -497,8 +497,8 @@ mod tests {
             point3(0., 0., -3.),
             vector3(
                 0.,
-                -std::f32::consts::SQRT_2 * 0.5,
-                std::f32::consts::SQRT_2 * 0.5,
+                -std::f64::consts::SQRT_2 * 0.5,
+                std::f64::consts::SQRT_2 * 0.5,
             ),
         );
 
@@ -542,8 +542,8 @@ mod tests {
             point3(0., 0., -3.),
             vector3(
                 0.,
-                -std::f32::consts::SQRT_2 * 0.5,
-                std::f32::consts::SQRT_2 * 0.5,
+                -std::f64::consts::SQRT_2 * 0.5,
+                std::f64::consts::SQRT_2 * 0.5,
             ),
         );
 
@@ -570,7 +570,7 @@ mod tests {
         material.transparency = 1.0;
         material.refractive_index = 1.5;
         let r = ray(
-            point3(0., 0., std::f32::consts::SQRT_2 * 0.5),
+            point3(0., 0., std::f64::consts::SQRT_2 * 0.5),
             vector3(0., 1., 0.),
         );
         let c = scene.color_at(r);
@@ -614,8 +614,8 @@ mod tests {
             point3(0., 0., -3.),
             vector3(
                 0.,
-                -std::f32::consts::SQRT_2 * 0.5,
-                std::f32::consts::SQRT_2 * 0.5,
+                -std::f64::consts::SQRT_2 * 0.5,
+                std::f64::consts::SQRT_2 * 0.5,
             ),
         );
 
@@ -650,8 +650,8 @@ mod tests {
             point3(0., 0., -3.),
             vector3(
                 0.,
-                -std::f32::consts::SQRT_2 * 0.5,
-                std::f32::consts::SQRT_2 * 0.5,
+                -std::f64::consts::SQRT_2 * 0.5,
+                std::f64::consts::SQRT_2 * 0.5,
             ),
         );
         let c = scene.color_at(r);
@@ -693,7 +693,7 @@ mod tests {
     fn the_normal_is_a_normalized_vector() {
         let transform = Transform::new();
         let geometry = Geometry::sphere();
-        let root3over3 = (3 as f32).sqrt() / 3.;
+        let root3over3 = (3 as f64).sqrt() / 3.;
         let world_point = point3(root3over3, root3over3, root3over3);
         let eye_vector = world_point - point3(0., 0., 0.);
         let n = world_normal_at(transform, geometry, world_point, eye_vector);
@@ -719,12 +719,12 @@ mod tests {
     fn computing_the_normal_on_a_transformed_sphere() {
         let transform = Transform::new()
             .scale(1., 0.5, 1.)
-            .rotate_z(std::f32::consts::PI / 5.);
+            .rotate_z(std::f64::consts::PI / 5.);
         let geometry = Geometry::sphere();
         let world_point = point3(
             0.,
-            2. * std::f32::consts::FRAC_1_SQRT_2,
-            -2. * std::f32::consts::FRAC_1_SQRT_2,
+            2. * std::f64::consts::FRAC_1_SQRT_2,
+            -2. * std::f64::consts::FRAC_1_SQRT_2,
         );
         let eye_vector = world_point - point3(0., 0., 0.);
         let n = world_normal_at(transform, geometry, world_point, eye_vector);
@@ -818,17 +818,17 @@ mod tests {
                 .material(Material::new().transparency(1.).refractive_index(1.5)),
         );
         let r = ray(
-            point3(0., 0., std::f32::consts::SQRT_2 * 0.5),
+            point3(0., 0., std::f64::consts::SQRT_2 * 0.5),
             vector3(0., 1., 0.),
         );
         let intersection = scene.nearest_intersection(r).unwrap();
-        assert_eq!(intersection.t, std::f32::consts::SQRT_2 * 0.5);
+        assert_approx_eq!(intersection.t, std::f64::consts::SQRT_2 * 0.5);
         let world_point = r.position(intersection.t);
         let eyev = -r.direction;
         let normalv = world_normal_at(transform, geometry, world_point, eyev);
         assert_approx_eq!(normalv.x, 0.);
-        assert_approx_eq!(normalv.y, -std::f32::consts::SQRT_2 * 0.5);
-        assert_approx_eq!(normalv.z, -std::f32::consts::SQRT_2 * 0.5);
+        assert_approx_eq!(normalv.y, -std::f64::consts::SQRT_2 * 0.5);
+        assert_approx_eq!(normalv.z, -std::f64::consts::SQRT_2 * 0.5);
         let (n1, n2) = scene.refractive_indexes(r, intersection);
         assert_eq!(n1, 1.5);
         assert_eq!(n2, 1.0);

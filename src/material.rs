@@ -7,13 +7,13 @@ use crate::tuple::*;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Material {
     pub color: Color,
-    pub ambient: f32,
-    pub diffuse: f32,
-    pub specular: f32,
-    pub shininess: f32,
-    pub reflective: f32,
-    pub transparency: f32,
-    pub refractive_index: f32,
+    pub ambient: f64,
+    pub diffuse: f64,
+    pub specular: f64,
+    pub shininess: f64,
+    pub reflective: f64,
+    pub transparency: f64,
+    pub refractive_index: f64,
     pub pattern: Option<Pattern>,
 }
 
@@ -37,37 +37,37 @@ impl Material {
         self
     }
 
-    pub fn ambient(mut self, ambient: f32) -> Self {
+    pub fn ambient(mut self, ambient: f64) -> Self {
         self.ambient = ambient;
         self
     }
 
-    pub fn diffuse(mut self, diffuse: f32) -> Self {
+    pub fn diffuse(mut self, diffuse: f64) -> Self {
         self.diffuse = diffuse;
         self
     }
 
-    pub fn specular(mut self, specular: f32) -> Self {
+    pub fn specular(mut self, specular: f64) -> Self {
         self.specular = specular;
         self
     }
 
-    pub fn shininess(mut self, shininess: f32) -> Self {
+    pub fn shininess(mut self, shininess: f64) -> Self {
         self.shininess = shininess;
         self
     }
 
-    pub fn reflective(mut self, reflective: f32) -> Self {
+    pub fn reflective(mut self, reflective: f64) -> Self {
         self.reflective = reflective;
         self
     }
 
-    pub fn transparency(mut self, transparency: f32) -> Self {
+    pub fn transparency(mut self, transparency: f64) -> Self {
         self.transparency = transparency;
         self
     }
 
-    pub fn refractive_index(mut self, refractive_index: f32) -> Self {
+    pub fn refractive_index(mut self, refractive_index: f64) -> Self {
         self.refractive_index = refractive_index;
         self
     }
@@ -165,8 +165,8 @@ mod tests {
         let position = point3(0., 0., 0.);
         let eyev = vector3(
             0.,
-            std::f32::consts::SQRT_2 / 2.,
-            -std::f32::consts::SQRT_2 / 2.,
+            std::f64::consts::SQRT_2 / 2.,
+            -std::f64::consts::SQRT_2 / 2.,
         );
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
@@ -193,8 +193,8 @@ mod tests {
         let position = point3(0., 0., 0.);
         let eyev = vector3(
             0.,
-            -std::f32::consts::SQRT_2 / 2.,
-            -std::f32::consts::SQRT_2 / 2.,
+            -std::f64::consts::SQRT_2 / 2.,
+            -std::f64::consts::SQRT_2 / 2.,
         );
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 10., -10.), Color::new(1., 1., 1.));

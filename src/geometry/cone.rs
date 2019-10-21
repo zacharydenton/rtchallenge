@@ -1,6 +1,6 @@
 use crate::geometry::*;
 
-pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
+pub fn intersect(ray: Ray, min: f64, max: f64, closed: bool) -> Intersections {
     let mut result = Intersections::new();
 
     let a = (ray.direction.x * ray.direction.x) - (ray.direction.y * ray.direction.y)
@@ -55,7 +55,7 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
     result
 }
 
-pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
+pub fn normal_at(point: Tuple4, min: f64, max: f64, _closed: bool) -> Tuple4 {
     // The square of the distance from the y axis.
     let d2 = point.x * point.x + point.z * point.z;
 
@@ -78,7 +78,7 @@ pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
 
 // Checks if the point along the ray at position t intersects the cap with the
 // given radius.
-fn check_cap(ray: Ray, t: f32, radius: f32) -> bool {
+fn check_cap(ray: Ray, t: f64, radius: f64) -> bool {
     let x = ray.origin.x + t * ray.direction.x;
     let z = ray.origin.z + t * ray.direction.z;
 
@@ -86,7 +86,7 @@ fn check_cap(ray: Ray, t: f32, radius: f32) -> bool {
 }
 
 // Helper which adds capped cone intersections.
-fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f32, max: f32, closed: bool) {
+fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f64, max: f64, closed: bool) {
     if !closed || ray.direction.y.abs() < 1e-3 {
         // Caps only matter if the cone is closed, and might possibly be intersected by
         // the ray.
@@ -127,7 +127,7 @@ mod tests {
         ];
         for (origin, direction, t0, t1) in examples {
             let r = ray(origin, direction.normalize());
-            let xs = intersect(r, -std::f32::INFINITY, std::f32::INFINITY, false);
+            let xs = intersect(r, -std::f64::INFINITY, std::f64::INFINITY, false);
             assert_eq!(xs.len(), 2);
             assert_approx_eq!(xs.t0, t0, 1e-3);
             assert_approx_eq!(xs.t1, t1, 1e-3);
@@ -138,7 +138,7 @@ mod tests {
     fn intersecting_a_cone_with_a_ray_parallel_to_one_of_its_halves() {
         let direction = vector3(0., 1., 1.).normalize();
         let r = ray(point3(0., 0., -1.), direction);
-        let xs = intersect(r, -std::f32::INFINITY, std::f32::INFINITY, false);
+        let xs = intersect(r, -std::f64::INFINITY, std::f64::INFINITY, false);
         assert_eq!(xs.len(), 1);
         assert_approx_eq!(xs.t0, 0.35355, 1e-3);
     }
@@ -165,13 +165,13 @@ mod tests {
             (point3(0., 0., 0.), vector3(0., 0., 0.)),
             (
                 point3(1., 1., 1.),
-                vector3(1., -std::f32::consts::SQRT_2, 1.),
+                vector3(1., -std::f64::consts::SQRT_2, 1.),
             ),
             (point3(-1., -1., 0.), vector3(-1., 1., 0.)),
         ];
         for (point, normal) in examples {
             assert_eq!(
-                normal_at(point, -std::f32::INFINITY, std::f32::INFINITY, false),
+                normal_at(point, -std::f64::INFINITY, std::f64::INFINITY, false),
                 normal
             );
         }

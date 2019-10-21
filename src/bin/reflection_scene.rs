@@ -12,7 +12,7 @@ use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
 fn main() {
-    let mut camera = Camera::new(1000, 500, std::f32::consts::FRAC_PI_3);
+    let mut camera = Camera::new(1000, 500, std::f64::consts::FRAC_PI_3);
     camera.set_transform(Transform::look_at(
         point3(0., 1.5, -5.),
         point3(0., 1., 0.),
@@ -39,8 +39,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., 5.)
-                    .rotate_y(-std::f32::consts::FRAC_PI_4)
-                    .rotate_x(std::f32::consts::FRAC_PI_2)
+                    .rotate_y(-std::f64::consts::FRAC_PI_4)
+                    .rotate_x(std::f64::consts::FRAC_PI_2)
                     .scale(10., 0.01, 10.),
             )
             .material(floor_material),
@@ -52,8 +52,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., 5.)
-                    .rotate_y(std::f32::consts::FRAC_PI_4)
-                    .rotate_x(std::f32::consts::FRAC_PI_2)
+                    .rotate_y(std::f64::consts::FRAC_PI_4)
+                    .rotate_x(std::f64::consts::FRAC_PI_2)
                     .scale(10., 0.01, 10.),
             )
             .material(floor_material),

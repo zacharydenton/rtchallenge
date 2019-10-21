@@ -7,19 +7,19 @@ use crate::tuple::*;
 pub struct Camera {
     pub hsize: usize,
     pub vsize: usize,
-    pub fov: f32,
+    pub fov: f64,
     transform: Transform,
-    half_width: f32,
-    half_height: f32,
-    pixel_size: f32,
+    half_width: f64,
+    half_height: f64,
+    pixel_size: f64,
 }
 
 impl Camera {
     /// Constructs a camera with the given horizontal size (in pixels), vertical
     /// size (in pixels), and field of view (in radians).
-    pub fn new(hsize: usize, vsize: usize, fov: f32) -> Self {
+    pub fn new(hsize: usize, vsize: usize, fov: f64) -> Self {
         let half_view = (fov / 2.).tan();
-        let aspect = hsize as f32 / vsize as f32;
+        let aspect = hsize as f64 / vsize as f64;
 
         let (half_width, half_height) = if aspect >= 1. {
             (half_view, half_view / aspect)
@@ -27,7 +27,7 @@ impl Camera {
             (half_view * aspect, half_view)
         };
 
-        let pixel_size = (half_width * 2.) / hsize as f32;
+        let pixel_size = (half_width * 2.) / hsize as f64;
 
         Camera {
             hsize,
@@ -44,8 +44,8 @@ impl Camera {
     /// (x, y) pixel on the canvas.
     pub fn ray(&self, x: usize, y: usize) -> Ray {
         // The offset from the edge of the canvas to the pixel's center.
-        let xoffset = (x as f32 + 0.5) * self.pixel_size;
-        let yoffset = (y as f32 + 0.5) * self.pixel_size;
+        let xoffset = (x as f64 + 0.5) * self.pixel_size;
+        let yoffset = (y as f64 + 0.5) * self.pixel_size;
 
         // The untransformed coordinates of the pixel in world space.
         // (The camera looks toward -z, so +x is to the left.)
@@ -96,7 +96,7 @@ mod tests {
     fn constructing_a_camera() {
         let hsize = 160;
         let vsize = 120;
-        let fov = std::f32::consts::FRAC_PI_2;
+        let fov = std::f64::consts::FRAC_PI_2;
         let c = Camera::new(hsize, vsize, fov);
 
         assert_eq!(c.hsize, hsize);
@@ -107,19 +107,19 @@ mod tests {
 
     #[test]
     fn the_pixel_size_for_a_horizontal_canvas() {
-        let c = Camera::new(200, 125, std::f32::consts::FRAC_PI_2);
-        assert_eq!(c.pixel_size, 0.01);
+        let c = Camera::new(200, 125, std::f64::consts::FRAC_PI_2);
+        assert_approx_eq!(c.pixel_size, 0.01);
     }
 
     #[test]
     fn the_pixel_size_for_a_vertical_canvas() {
-        let c = Camera::new(125, 200, std::f32::consts::FRAC_PI_2);
-        assert_eq!(c.pixel_size, 0.01);
+        let c = Camera::new(125, 200, std::f64::consts::FRAC_PI_2);
+        assert_approx_eq!(c.pixel_size, 0.01);
     }
 
     #[test]
     fn constructing_a_ray_through_the_center_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
+        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
         let r = c.ray(100, 50);
 
         assert_approx_eq!(r.origin.x, 0., 1e-5);
@@ -132,7 +132,7 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_through_a_corner_of_the_canvas() {
-        let c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
+        let c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
         let r = c.ray(0, 0);
 
         assert_approx_eq!(r.origin.x, 0., 1e-5);
@@ -145,10 +145,10 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_when_the_camera_is_transformed() {
-        let mut c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
+        let mut c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
         c.set_transform(
             Transform::new()
-                .rotate_y(std::f32::consts::FRAC_PI_4)
+                .rotate_y(std::f64::consts::FRAC_PI_4)
                 .translate(0., -2., 5.),
         );
         let r = c.ray(100, 50);
@@ -156,9 +156,9 @@ mod tests {
         assert_approx_eq!(r.origin.x, 0., 1e-5);
         assert_approx_eq!(r.origin.y, 2., 1e-5);
         assert_approx_eq!(r.origin.z, -5., 1e-5);
-        assert_approx_eq!(r.direction.x, std::f32::consts::SQRT_2 / 2., 1e-5);
+        assert_approx_eq!(r.direction.x, std::f64::consts::SQRT_2 / 2., 1e-5);
         assert_approx_eq!(r.direction.y, 0.0, 1e-5);
-        assert_approx_eq!(r.direction.z, -std::f32::consts::SQRT_2 / 2., 1e-5);
+        assert_approx_eq!(r.direction.z, -std::f64::consts::SQRT_2 / 2., 1e-5);
     }
 
     #[test]
@@ -179,7 +179,7 @@ mod tests {
                 .transform(Transform::new().scale(0.5, 0.5, 0.5)),
         );
 
-        let mut camera = Camera::new(11, 11, std::f32::consts::FRAC_PI_2);
+        let mut camera = Camera::new(11, 11, std::f64::consts::FRAC_PI_2);
         let from = point3(0., 0., -5.);
         let to = point3(0., 0., 0.);
         let up = vector3(0., 1., 0.);
@@ -195,10 +195,10 @@ mod tests {
 
     #[bench]
     fn bench_constructing_a_ray_when_the_camera_is_transformed(bencher: &mut Bencher) {
-        let mut c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
+        let mut c = Camera::new(201, 101, std::f64::consts::FRAC_PI_2);
         c.set_transform(
             Transform::new()
-                .rotate_y(std::f32::consts::FRAC_PI_4)
+                .rotate_y(std::f64::consts::FRAC_PI_4)
                 .translate(0., -2., 5.),
         );
         bencher.iter(|| c.ray(100, 50));

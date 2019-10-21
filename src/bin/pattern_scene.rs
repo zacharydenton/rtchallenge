@@ -12,7 +12,7 @@ use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
 fn main() {
-    let mut camera = Camera::new(1000, 500, std::f32::consts::FRAC_PI_3);
+    let mut camera = Camera::new(1000, 500, std::f64::consts::FRAC_PI_3);
     camera.set_transform(Transform::look_at(
         point3(-0.2, 2.8, -1.4),
         point3(0.3, 0.0, 1.),
@@ -40,7 +40,7 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., 1.5)
-                    .rotate_x(std::f32::consts::FRAC_PI_2),
+                    .rotate_x(std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -50,7 +50,7 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., -1.5)
-                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+                    .rotate_x(-std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -60,8 +60,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., 2.2)
-                    .rotate_y(-std::f32::consts::FRAC_PI_4)
-                    .rotate_x(std::f32::consts::FRAC_PI_2),
+                    .rotate_y(-std::f64::consts::FRAC_PI_4)
+                    .rotate_x(std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -71,8 +71,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., -2.2)
-                    .rotate_y(std::f32::consts::FRAC_PI_4)
-                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+                    .rotate_y(std::f64::consts::FRAC_PI_4)
+                    .rotate_x(-std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -82,8 +82,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., 2.2)
-                    .rotate_y(std::f32::consts::FRAC_PI_4)
-                    .rotate_x(std::f32::consts::FRAC_PI_2),
+                    .rotate_y(std::f64::consts::FRAC_PI_4)
+                    .rotate_x(std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -93,8 +93,8 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(0., 0., -2.2)
-                    .rotate_y(-std::f32::consts::FRAC_PI_4)
-                    .rotate_x(-std::f32::consts::FRAC_PI_2),
+                    .rotate_y(-std::f64::consts::FRAC_PI_4)
+                    .rotate_x(-std::f64::consts::FRAC_PI_2),
             )
             .material(wall_material),
     );
@@ -108,7 +108,7 @@ fn main() {
                 Transform::new()
                     .scale(0.8, 0.8, 0.8)
                     .translate(-0.5, 1., 0.5)
-                    .rotate_z(std::f32::consts::FRAC_PI_2),
+                    .rotate_z(std::f64::consts::FRAC_PI_2),
             )
             .material(
                 Material::new()
@@ -142,7 +142,7 @@ fn main() {
     let mut left_pattern = stripe_pattern(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
     left_pattern.transform = Transform::new()
         .scale(0.2, 1., 1.)
-        .rotate_y(std::f32::consts::FRAC_PI_4);
+        .rotate_y(std::f64::consts::FRAC_PI_4);
     scene.add_object(
         Object::new()
             .geometry(Geometry::sphere())

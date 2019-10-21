@@ -1,6 +1,5 @@
 use crate::color::*;
-use crate::matrix::*;
-use crate::object::*;
+use crate::transform::*;
 use crate::tuple::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -16,7 +15,7 @@ pub enum PatternSpec {
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Pattern {
     pub spec: PatternSpec,
-    pub transform: Matrix4,
+    pub transform: Transform,
 }
 
 impl Pattern {
@@ -43,9 +42,9 @@ impl Pattern {
                 }
             }
             PatternSpec::Checkers(a, b) => {
-                let c = point.x.floor() + point.z.floor();
+                let c = point.x.floor() + point.y.floor() + point.z.floor();
                 let f = (c * 0.5).fract();
-                if f.abs() < 1e-2 {
+                if f.abs() < 1e-3 {
                     a
                 } else {
                     b
@@ -56,14 +55,19 @@ impl Pattern {
                 let fraction = (point.x * point.x + point.z * point.z).sqrt().fract();
                 a + distance * fraction
             }
-            PatternSpec::TestPattern => color(point.x, point.y, point.z),
+            PatternSpec::TestPattern => Color {
+                r: point.x,
+                g: point.y,
+                b: point.z,
+            },
         }
     }
 
-    /// Returns the pattern's color on the given object at the given point in world space.
-    pub fn at_object(&self, object: &Object, point: Tuple4) -> Color {
-        let object_point = object.transform.inverse() * point;
-        let pattern_point = self.transform.inverse() * object_point;
+    /// Returns the pattern's color on the given object at the given point in
+    /// world space.
+    pub fn at_object(&self, transform: Transform, point: Tuple4) -> Color {
+        let object_point = transform.world_to_local * point;
+        let pattern_point = self.transform.world_to_local * object_point;
         self.at(pattern_point)
     }
 }
@@ -71,57 +75,56 @@ impl Pattern {
 pub fn stripe_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::Stripe(a, b),
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 pub fn linear_gradient_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::LinearGradient(a, b),
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 pub fn ring_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::Ring(a, b),
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 pub fn checkers_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::Checkers(a, b),
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 pub fn radial_gradient_pattern(a: Color, b: Color) -> Pattern {
     Pattern {
         spec: PatternSpec::RadialGradient(a, b),
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 pub fn test_pattern() -> Pattern {
     Pattern {
         spec: PatternSpec::TestPattern,
-        transform: I4,
+        transform: Transform::new(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::transform::*;
     use assert_approx_eq::assert_approx_eq;
 
     fn white() -> Color {
-        color(1., 1., 1.)
+        Color::new(1., 1., 1.)
     }
 
     fn black() -> Color {
-        color(0., 0., 0.)
+        Color::new(0., 0., 0.)
     }
 
     #[test]
@@ -164,29 +167,24 @@ mod tests {
 
     #[test]
     fn stripes_with_an_object_transformation() {
-        let mut object = sphere();
-        object.transform = scale(2., 2., 2.);
         let pattern = stripe_pattern(white(), black());
-        let c = pattern.at_object(&object, point3(1.5, 0., 0.));
+        let c = pattern.at_object(Transform::new().scale(2., 2., 2.), point3(1.5, 0., 0.));
         assert_eq!(c, white());
     }
 
     #[test]
     fn stripes_with_a_pattern_transformation() {
-        let object = sphere();
         let mut pattern = stripe_pattern(white(), black());
-        pattern.transform = scale(2., 2., 2.);
-        let c = pattern.at_object(&object, point3(1.5, 0., 0.));
+        pattern.transform = Transform::new().scale(2., 2., 2.);
+        let c = pattern.at_object(Transform::new(), point3(1.5, 0., 0.));
         assert_eq!(c, white());
     }
 
     #[test]
     fn stripes_with_both_an_object_and_a_pattern_transformation() {
-        let mut object = sphere();
-        object.transform = scale(2., 2., 2.);
         let mut pattern = stripe_pattern(white(), black());
-        pattern.transform = translate(0.5, 0., 0.);
-        let c = pattern.at_object(&object, point3(2.5, 0., 0.));
+        pattern.transform = Transform::new().translate(0.5, 0., 0.);
+        let c = pattern.at_object(Transform::new().scale(2., 2., 2.), point3(2.5, 0., 0.));
         assert_eq!(c, white());
     }
 
@@ -194,9 +192,15 @@ mod tests {
     fn a_gradient_linearly_interpolates_between_colors() {
         let pattern = linear_gradient_pattern(white(), black());
         assert_eq!(pattern.at(point3(0., 0., 0.)), white());
-        assert_eq!(pattern.at(point3(0.25, 0., 0.)), color(0.75, 0.75, 0.75));
-        assert_eq!(pattern.at(point3(0.5, 0., 0.)), color(0.5, 0.5, 0.5));
-        assert_eq!(pattern.at(point3(0.75, 0., 0.)), color(0.25, 0.25, 0.25));
+        assert_eq!(
+            pattern.at(point3(0.25, 0., 0.)),
+            Color::new(0.75, 0.75, 0.75)
+        );
+        assert_eq!(pattern.at(point3(0.5, 0., 0.)), Color::new(0.5, 0.5, 0.5));
+        assert_eq!(
+            pattern.at(point3(0.75, 0., 0.)),
+            Color::new(0.25, 0.25, 0.25)
+        );
     }
 
     #[test]
@@ -217,6 +221,14 @@ mod tests {
     }
 
     #[test]
+    fn checkers_should_repeat_in_y() {
+        let pattern = checkers_pattern(white(), black());
+        assert_eq!(pattern.at(point3(0., 0., 0.)), white());
+        assert_eq!(pattern.at(point3(0., 0.99, 0.)), white());
+        assert_eq!(pattern.at(point3(0., 1.01, 0.)), black());
+    }
+
+    #[test]
     fn checkers_should_repeat_in_z() {
         let pattern = checkers_pattern(white(), black());
         assert_eq!(pattern.at(point3(0., 0., 0.)), white());
@@ -228,12 +240,24 @@ mod tests {
     fn a_radial_gradient_should_interpolate_in_both_x_and_z() {
         let pattern = radial_gradient_pattern(white(), black());
         assert_eq!(pattern.at(point3(0., 0., 0.)), white());
-        assert_eq!(pattern.at(point3(0.25, 0., 0.)), color(0.75, 0.75, 0.75));
-        assert_eq!(pattern.at(point3(0.5, 0., 0.)), color(0.5, 0.5, 0.5));
-        assert_eq!(pattern.at(point3(0.75, 0., 0.)), color(0.25, 0.25, 0.25));
-        assert_eq!(pattern.at(point3(0., 0., 0.25)), color(0.75, 0.75, 0.75));
-        assert_eq!(pattern.at(point3(0., 0., 0.5)), color(0.5, 0.5, 0.5));
-        assert_eq!(pattern.at(point3(0., 0., 0.75)), color(0.25, 0.25, 0.25));
+        assert_eq!(
+            pattern.at(point3(0.25, 0., 0.)),
+            Color::new(0.75, 0.75, 0.75)
+        );
+        assert_eq!(pattern.at(point3(0.5, 0., 0.)), Color::new(0.5, 0.5, 0.5));
+        assert_eq!(
+            pattern.at(point3(0.75, 0., 0.)),
+            Color::new(0.25, 0.25, 0.25)
+        );
+        assert_eq!(
+            pattern.at(point3(0., 0., 0.25)),
+            Color::new(0.75, 0.75, 0.75)
+        );
+        assert_eq!(pattern.at(point3(0., 0., 0.5)), Color::new(0.5, 0.5, 0.5));
+        assert_eq!(
+            pattern.at(point3(0., 0., 0.75)),
+            Color::new(0.25, 0.25, 0.25)
+        );
 
         let c1 = pattern.at(point3(
             0.25 * std::f32::consts::FRAC_1_SQRT_2,
@@ -275,10 +299,8 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation() {
-        let mut shape = sphere();
-        shape.transform = scale(2., 2., 2.);
         let pattern = test_pattern();
-        let c = pattern.at_object(&shape, point3(2., 3., 4.));
+        let c = pattern.at_object(Transform::new().scale(2., 2., 2.), point3(2., 3., 4.));
 
         assert_approx_eq!(c.r, 1.);
         assert_approx_eq!(c.g, 1.5);
@@ -287,10 +309,9 @@ mod tests {
 
     #[test]
     fn a_pattern_with_a_pattern_transformation() {
-        let shape = sphere();
         let mut pattern = test_pattern();
-        pattern.transform = scale(2., 2., 2.);
-        let c = pattern.at_object(&shape, point3(2., 3., 4.));
+        pattern.transform = Transform::new().scale(2., 2., 2.);
+        let c = pattern.at_object(Transform::new(), point3(2., 3., 4.));
 
         assert_approx_eq!(c.r, 1.);
         assert_approx_eq!(c.g, 1.5);
@@ -299,11 +320,9 @@ mod tests {
 
     #[test]
     fn a_pattern_with_an_object_transformation_and_a_pattern_transformation() {
-        let mut shape = sphere();
-        shape.transform = scale(2., 2., 2.);
         let mut pattern = test_pattern();
-        pattern.transform = translate(0.5, 1., 1.5);
-        let c = pattern.at_object(&shape, point3(2.5, 3., 3.5));
+        pattern.transform = Transform::new().translate(0.5, 1., 1.5);
+        let c = pattern.at_object(Transform::new().scale(2., 2., 2.), point3(2.5, 3., 3.5));
 
         assert_approx_eq!(c.r, 0.75);
         assert_approx_eq!(c.g, 0.5);

@@ -8,19 +8,18 @@ pub struct Color {
 }
 
 impl Color {
+    pub fn new(r: f32, g: f32, b: f32) -> Self {
+        Color { r, g, b }
+    }
+
     /// Clamps each color component to the range [0, 1].
     pub fn clamp(&self) -> Color {
-        color(
-            self.r.min(1.).max(0.),
-            self.g.min(1.).max(0.),
-            self.b.min(1.).max(0.),
-        )
+        Color {
+            r: self.r.min(1.).max(0.),
+            g: self.g.min(1.).max(0.),
+            b: self.b.min(1.).max(0.),
+        }
     }
-}
-
-/// Constructs a Color.
-pub fn color(r: f32, g: f32, b: f32) -> Color {
-    Color { r, g, b }
 }
 
 impl ops::Add for Color {
@@ -78,7 +77,7 @@ mod tests {
 
     #[test]
     fn colors_are_rgb_tuples() {
-        let c = color(-0.5, 0.4, 1.7);
+        let c = Color::new(-0.5, 0.4, 1.7);
         assert_eq!(c.r, -0.5);
         assert_eq!(c.g, 0.4);
         assert_eq!(c.b, 1.7);
@@ -86,8 +85,8 @@ mod tests {
 
     #[test]
     fn adding_colors() {
-        let c1 = color(0.9, 0.6, 0.75);
-        let c2 = color(0.7, 0.1, 0.25);
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
         let res = c1 + c2;
         assert_approx_eq!(res.r, 1.6);
         assert_approx_eq!(res.g, 0.7);
@@ -96,8 +95,8 @@ mod tests {
 
     #[test]
     fn subtracting_colors() {
-        let c1 = color(0.9, 0.6, 0.75);
-        let c2 = color(0.7, 0.1, 0.25);
+        let c1 = Color::new(0.9, 0.6, 0.75);
+        let c2 = Color::new(0.7, 0.1, 0.25);
         let res = c1 - c2;
         assert_approx_eq!(res.r, 0.2);
         assert_approx_eq!(res.g, 0.5);
@@ -106,7 +105,7 @@ mod tests {
 
     #[test]
     fn multiplying_a_color_by_a_scalar() {
-        let c = color(0.2, 0.3, 0.4);
+        let c = Color::new(0.2, 0.3, 0.4);
         let res = c * 2.0;
         assert_approx_eq!(res.r, 0.4);
         assert_approx_eq!(res.g, 0.6);
@@ -115,8 +114,8 @@ mod tests {
 
     #[test]
     fn multiplying_colors() {
-        let c1 = color(1.0, 0.2, 0.4);
-        let c2 = color(0.9, 1.0, 0.1);
+        let c1 = Color::new(1.0, 0.2, 0.4);
+        let c2 = Color::new(0.9, 1.0, 0.1);
         let res = c1 * c2;
         assert_approx_eq!(res.r, 0.9);
         assert_approx_eq!(res.g, 0.2);

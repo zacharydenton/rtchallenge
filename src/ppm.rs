@@ -48,7 +48,7 @@ mod tests {
 
     #[test]
     fn constructing_the_ppm_header() {
-        let c = canvas(5, 3);
+        let c = Canvas::new(5, 3);
         let ppm = canvas_to_ppm(c);
         assert!(ppm.starts_with(
             "P3
@@ -60,14 +60,14 @@ mod tests {
 
     #[test]
     fn constructing_the_ppm_pixel_data() {
-        let mut c = canvas(5, 3);
-        let c1 = color(1.5, 0.0, 0.0);
-        let c2 = color(0.0, 0.5, 0.0);
-        let c3 = color(-0.5, 0.0, 1.0);
+        let mut c = Canvas::new(5, 3);
+        let c1 = Color::new(1.5, 0.0, 0.0);
+        let c2 = Color::new(0.0, 0.5, 0.0);
+        let c3 = Color::new(-0.5, 0.0, 1.0);
 
-        c.set_color(0, 0, &c1);
-        c.set_color(2, 1, &c2);
-        c.set_color(4, 2, &c3);
+        c.set_color(0, 0, c1);
+        c.set_color(2, 1, c2);
+        c.set_color(4, 2, c3);
 
         let ppm = canvas_to_ppm(c);
         assert!(ppm.ends_with(
@@ -80,11 +80,11 @@ mod tests {
 
     #[test]
     fn splitting_long_lines_in_ppm_files() {
-        let mut c = canvas(10, 2);
+        let mut c = Canvas::new(10, 2);
 
         for x in 0..c.width {
             for y in 0..c.height {
-                c.set_color(x, y, &color(1.0, 0.8, 0.6));
+                c.set_color(x, y, Color::new(1.0, 0.8, 0.6));
             }
         }
 
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn ppm_files_are_terminated_by_a_newline() {
-        let c = canvas(5, 3);
+        let c = Canvas::new(5, 3);
         let ppm = canvas_to_ppm(c);
         assert!(ppm.ends_with("\n"));
     }

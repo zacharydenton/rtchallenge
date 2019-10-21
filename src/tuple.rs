@@ -75,7 +75,8 @@ impl Tuple4 {
 
     /// Returns the cross product (aka vector product) with another vector.
     ///
-    /// This is a new vector that is perpendicular to both of the original vectors.
+    /// This is a new vector that is perpendicular to both of the original
+    /// vectors.
     pub fn cross(&self, other: Tuple4) -> Tuple4 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
@@ -88,7 +89,8 @@ impl Tuple4 {
         }
     }
 
-    /// Returns a new vector representing this vector reflected around the normal.
+    /// Returns a new vector representing this vector reflected around the
+    /// normal.
     pub fn reflect(&self, normal: Tuple4) -> Tuple4 {
         *self - normal * 2. * self.dot(normal)
     }

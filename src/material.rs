@@ -3,6 +3,7 @@ use crate::light::*;
 use crate::texture::*;
 use crate::transform::*;
 use crate::tuple::*;
+use rand::Rng;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Material {
@@ -76,8 +77,9 @@ impl Material {
     }
 
     /// Computes the color of the surface at the given point.
-    pub fn lighting(
+    pub fn lighting<R: Rng>(
         self,
+        rng: &mut R,
         transform: Transform,
         light: Light,
         point: Tuple4,
@@ -85,7 +87,7 @@ impl Material {
         normalv: Tuple4,
         in_shadow: bool,
     ) -> Color {
-        let base_color = self.texture.evaluate(transform, point);
+        let base_color = self.texture.evaluate(rng, transform, point);
 
         // Combine the surface color with the light's color/intensity.
         let effective_color = base_color * light.intensity;
@@ -129,6 +131,8 @@ impl Material {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
+    use rand::rngs::SmallRng;
+    use rand::SeedableRng;
 
     #[test]
     fn the_default_material() {
@@ -145,17 +149,27 @@ mod tests {
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            false,
+        );
         assert_eq!(result, Color::new(1.9, 1.9, 1.9));
     }
 
     #[test]
     fn lighting_with_the_eye_between_the_light_and_the_surface_eye_offset_45_degrees() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(
@@ -165,18 +179,35 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            false,
+        );
         assert_eq!(result, Color::new(1.0, 1.0, 1.0));
     }
 
     #[test]
     fn lighting_with_the_eye_opposite_surface_light_offset_45_degrees() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 10., -10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            false,
+        );
         assert_approx_eq!(result.r, 0.7364, 1e-5);
         assert_approx_eq!(result.g, 0.7364, 1e-5);
         assert_approx_eq!(result.b, 0.7364, 1e-5);
@@ -184,6 +215,7 @@ mod tests {
 
     #[test]
     fn lighting_with_eye_in_the_path_of_the_reflection_vector() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(
@@ -193,7 +225,15 @@ mod tests {
         );
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 10., -10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            false,
+        );
         assert_approx_eq!(result.r, 1.6364, 1e-4);
         assert_approx_eq!(result.g, 1.6364, 1e-4);
         assert_approx_eq!(result.b, 1.6364, 1e-4);
@@ -201,12 +241,21 @@ mod tests {
 
     #[test]
     fn lighting_with_the_light_behind_the_surface() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 0., 10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, false);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            false,
+        );
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);
@@ -214,12 +263,21 @@ mod tests {
 
     #[test]
     fn lighting_with_the_surface_in_shadow() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let m = Material::new();
         let position = point3(0., 0., 0.);
         let eyev = vector3(0., 0., -1.);
         let normalv = vector3(0., 0., -1.);
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
-        let result = m.lighting(Transform::new(), light, position, eyev, normalv, true);
+        let result = m.lighting(
+            &mut rng,
+            Transform::new(),
+            light,
+            position,
+            eyev,
+            normalv,
+            true,
+        );
         assert_approx_eq!(result.r, 0.1, 1e-5);
         assert_approx_eq!(result.g, 0.1, 1e-5);
         assert_approx_eq!(result.b, 0.1, 1e-5);
@@ -227,6 +285,7 @@ mod tests {
 
     #[test]
     fn lighting_with_a_texture_applied() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut m = Material::new();
         m.texture = Texture::stripe(Color::WHITE, Color::BLACK);
         m.ambient = 1.0;
@@ -236,6 +295,7 @@ mod tests {
         let normalv = vector3(0., 0., -1.0);
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
         let c1 = m.lighting(
+            &mut rng,
             Transform::new(),
             light,
             point3(0.9, 0., 0.),
@@ -244,6 +304,7 @@ mod tests {
             false,
         );
         let c2 = m.lighting(
+            &mut rng,
             Transform::new(),
             light,
             point3(1.1, 0., 0.),

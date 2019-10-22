@@ -7,6 +7,7 @@ use crate::object::*;
 use crate::ray::*;
 use crate::transform::*;
 use crate::tuple::*;
+use rand::Rng;
 
 pub struct Scene {
     lights: Vec<Light>,
@@ -29,13 +30,14 @@ impl Scene {
 
     /// Intersects the ray with the world and returns the color at the resulting
     /// intersection.
-    pub fn color_at(&self, world_ray: Ray) -> Color {
-        self.color_at_remaining(world_ray, self.max_depth).clamp()
+    pub fn color_at<R: Rng>(&self, rng: &mut R, world_ray: Ray) -> Color {
+        self.color_at_remaining(rng, world_ray, self.max_depth)
+            .clamp()
     }
 
     /// Intersects the ray with the world and returns the color at the resulting
     /// intersection (with specified remaining depth).
-    fn color_at_remaining(&self, world_ray: Ray, remaining: usize) -> Color {
+    fn color_at_remaining<R: Rng>(&self, rng: &mut R, world_ray: Ray, remaining: usize) -> Color {
         if remaining == 0 {
             return Color::BLACK;
         }
@@ -56,6 +58,7 @@ impl Scene {
             let light = self.lights[0]; // TODO: Support more than one light.
             let in_shadow = self.is_shadowed(over_point, light);
             let surface_color = material.lighting(
+                rng,
                 transform,
                 light,
                 world_point,
@@ -68,7 +71,7 @@ impl Scene {
             let reflect_color = if material.reflective > 0. && remaining > 0 {
                 let reflect_vector = world_ray.direction.reflect(world_normal);
                 let reflect_ray = ray(over_point, reflect_vector);
-                self.color_at_remaining(reflect_ray, remaining - 1) * material.reflective
+                self.color_at_remaining(rng, reflect_ray, remaining - 1) * material.reflective
             } else {
                 Color::BLACK
             };
@@ -92,7 +95,7 @@ impl Scene {
                     let cos_t = (1. - sin2_t).sqrt();
                     let direction = world_normal * (n_ratio * cos_i - cos_t) - eye_vector * n_ratio;
                     let refract_ray = ray(under_point, direction);
-                    let refract_color = self.color_at_remaining(refract_ray, remaining - 1);
+                    let refract_color = self.color_at_remaining(rng, refract_ray, remaining - 1);
                     refract_color * material.transparency
                 }
             } else {
@@ -256,6 +259,8 @@ mod tests {
     use super::*;
     use crate::texture::*;
     use assert_approx_eq::assert_approx_eq;
+    use rand::rngs::SmallRng;
+    use rand::SeedableRng;
     use test::Bencher;
 
     fn default_scene() -> Scene {
@@ -343,9 +348,10 @@ mod tests {
 
     #[test]
     fn shading_an_intersection() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let scene = default_scene();
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.38066, 1e-5);
         assert_approx_eq!(c.g, 0.47583, 1e-5);
@@ -354,11 +360,12 @@ mod tests {
 
     #[test]
     fn shading_an_intersection_from_the_inside() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         scene.lights = vec![Light::new(point3(0., 0.25, 0.), Color::new(1., 1., 1.))];
         let r = ray(point3(0., 0., 0.), vector3(0., 0., 1.));
         let i = scene.nearest_intersection(r).unwrap();
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_eq!(i.t, 0.5);
         assert_eq!(i.object_id, 1);
@@ -369,9 +376,10 @@ mod tests {
 
     #[test]
     fn the_color_when_a_ray_misses() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let scene = default_scene();
         let r = ray(point3(0., 0., -5.), vector3(0., 1., 0.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.0, 1e-5);
         assert_approx_eq!(c.g, 0.0, 1e-5);
@@ -380,9 +388,10 @@ mod tests {
 
     #[test]
     fn the_color_when_a_ray_hits() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let scene = default_scene();
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.38066, 1e-5);
         assert_approx_eq!(c.g, 0.47583, 1e-5);
@@ -391,6 +400,7 @@ mod tests {
 
     #[test]
     fn the_color_with_an_intersection_behind_the_ray() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = Scene::new();
         scene.add_light(Light::new(point3(-10., 10., -10.), Color::new(1., 1., 1.)));
         scene.add_object(
@@ -411,13 +421,14 @@ mod tests {
         );
 
         let r = ray(point3(0., 0., 0.75), vector3(0., 0., -1.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_eq!(c, expected_color);
     }
 
     #[test]
     fn shade_is_given_an_intersection_in_shadow() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = Scene::new();
         scene.add_light(Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.)));
         scene.add_object(Object::new().geometry(Geometry::sphere()));
@@ -428,7 +439,7 @@ mod tests {
         );
         let r = ray(point3(0., 0., 5.), vector3(0., 0., 1.));
 
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.1, 1e-5);
         assert_approx_eq!(c.g, 0.1, 1e-5);
@@ -437,6 +448,7 @@ mod tests {
 
     #[test]
     fn the_reflected_color_for_a_reflective_material() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         scene.add_object(
             Object::new()
@@ -459,7 +471,7 @@ mod tests {
             ),
         );
 
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
         assert_approx_eq!(c.r, 0.19032, 1e-2);
         assert_approx_eq!(c.g, 0.2379, 1e-2);
         assert_approx_eq!(c.b, 0.14274, 1e-2);
@@ -467,6 +479,7 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_reflective_material() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         scene.add_object(
             Object::new()
@@ -483,7 +496,7 @@ mod tests {
             ),
         );
 
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
         assert_approx_eq!(c.r, 0.87677, 1e-2);
         assert_approx_eq!(c.g, 0.92436, 1e-2);
         assert_approx_eq!(c.b, 0.82918, 1e-2);
@@ -491,6 +504,7 @@ mod tests {
 
     #[test]
     fn color_at_with_mutually_reflective_surfaces() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = Scene::new();
         scene.add_light(Light::new(point3(0., 0., 0.), Color::new(1., 1., 1.)));
 
@@ -505,7 +519,7 @@ mod tests {
         scene.add_object(upper);
 
         let r = ray(point3(0., 0., 0.), vector3(0., 1., 0.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         // Test that the color_at function terminates with infinitely recursive rays.
         assert_eq!(c.r, 1.);
@@ -513,6 +527,7 @@ mod tests {
 
     #[test]
     fn the_reflected_color_at_the_maximum_recursive_depth() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         scene.add_object(
             Object::new()
@@ -528,23 +543,25 @@ mod tests {
             ),
         );
 
-        let c = scene.color_at_remaining(r, 0);
+        let c = scene.color_at_remaining(&mut rng, r, 0);
         assert_eq!(c, Color::new(0., 0., 0.));
     }
 
     #[test]
     fn the_refracted_color_at_the_maximum_recursive_depth() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         let mut material = scene.materials.first_mut().unwrap();
         material.transparency = 1.0;
         material.refractive_index = 1.5;
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
-        let c = scene.color_at_remaining(r, 0);
+        let c = scene.color_at_remaining(&mut rng, r, 0);
         assert_eq!(c, Color::new(0., 0., 0.,));
     }
 
     #[test]
     fn the_refracted_color_under_total_internal_reflection() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         let mut material = scene.materials.first_mut().unwrap();
         material.texture = Texture::constant(Color::BLACK);
@@ -554,12 +571,13 @@ mod tests {
             point3(0., 0., std::f32::consts::SQRT_2 * 0.5),
             vector3(0., 1., 0.),
         );
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
         assert_eq!(c, Color::new(0., 0., 0.,));
     }
 
     #[test]
     fn the_refracted_color_with_a_refracted_ray() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         let a = scene.materials.first_mut().unwrap();
         a.ambient = 1.0;
@@ -569,7 +587,7 @@ mod tests {
         b.transparency = 1.0;
         b.refractive_index = 1.5;
         let r = ray(point3(0., 0., 0.1), vector3(0., 1., 0.));
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.0, 1e-2);
         assert_approx_eq!(c.g, 0.99888, 1e-2);
@@ -578,6 +596,7 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_transparent_material() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
         scene.add_object(
             Object::new()
@@ -600,7 +619,7 @@ mod tests {
             ),
         );
 
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.93642, 1e-2);
         assert_approx_eq!(c.g, 0.68642, 1e-2);
@@ -609,6 +628,7 @@ mod tests {
 
     #[test]
     fn shade_hit_with_a_reflective_and_transparent_material() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut scene = default_scene();
 
         let floor = Object::new()
@@ -635,7 +655,7 @@ mod tests {
                 std::f32::consts::SQRT_2 * 0.5,
             ),
         );
-        let c = scene.color_at(r);
+        let c = scene.color_at(&mut rng, r);
 
         assert_approx_eq!(c.r, 0.93391, 1e-2);
         assert_approx_eq!(c.g, 0.69643, 1e-2);
@@ -868,9 +888,10 @@ mod tests {
 
     #[bench]
     fn bench_shading_an_intersection(bencher: &mut Bencher) {
+        let mut rng = SmallRng::seed_from_u64(0);
         let scene = default_scene();
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
-        bencher.iter(|| scene.color_at(r));
+        bencher.iter(|| scene.color_at(&mut rng, r));
     }
 
     #[bench]

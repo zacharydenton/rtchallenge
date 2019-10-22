@@ -22,8 +22,7 @@ fn main() {
     let mut scene = Scene::new();
     scene.add_light(Light::new(point3(-0.5, 2.7, -1.3), Color::new(1., 1., 1.)));
 
-    let mut floor_texture =
-        Texture::radial_gradient(Color::new(0.9, 0.1, 0.6), Color::new(0.1, 0.1, 0.3));
+    let mut floor_texture = Texture::white_noise();
     floor_texture.transform = Transform::new().scale(2., 2., 2.);
     scene.add_object(
         Object::new()

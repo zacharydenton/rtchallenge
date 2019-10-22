@@ -4,6 +4,9 @@ use crate::scene::*;
 use crate::transform::*;
 use crate::tuple::*;
 
+use rand::rngs::SmallRng;
+use rand::SeedableRng;
+
 pub struct Camera {
     pub hsize: usize,
     pub vsize: usize,
@@ -67,12 +70,13 @@ impl Camera {
     }
 
     pub fn render(&self, scene: Scene) -> Canvas {
+        let mut rng = SmallRng::from_entropy();
         let mut image = Canvas::new(self.hsize, self.vsize);
 
         for y in 0..image.height {
             for x in 0..image.width {
                 let ray = self.ray(x, y);
-                let color = scene.color_at(ray);
+                let color = scene.color_at(&mut rng, ray);
                 image.set_color(x, y, color);
             }
         }

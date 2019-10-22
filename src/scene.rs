@@ -402,9 +402,10 @@ mod tests {
                     .specular(0.2),
             ),
         );
+        let expected_color = Color::new(0.3, 0.5, 0.1);
         scene.add_object(
             Object::new()
-                .material(Material::new().ambient(1.0))
+                .material(Material::new().ambient(1.0).color(expected_color))
                 .geometry(Geometry::sphere())
                 .transform(Transform::new().scale(0.5, 0.5, 0.5)),
         );
@@ -412,7 +413,7 @@ mod tests {
         let r = ray(point3(0., 0., 0.75), vector3(0., 0., -1.));
         let c = scene.color_at(r);
 
-        assert_eq!(c, scene.materials[1].color);
+        assert_eq!(c, expected_color);
     }
 
     #[test]
@@ -546,7 +547,7 @@ mod tests {
     fn the_refracted_color_under_total_internal_reflection() {
         let mut scene = default_scene();
         let mut material = scene.materials.first_mut().unwrap();
-        material.color = Color::new(0., 0., 0.);
+        material.texture = Texture::constant(Color::BLACK);
         material.transparency = 1.0;
         material.refractive_index = 1.5;
         let r = ray(
@@ -562,7 +563,7 @@ mod tests {
         let mut scene = default_scene();
         let a = scene.materials.first_mut().unwrap();
         a.ambient = 1.0;
-        a.texture = Some(Texture::test_pattern());
+        a.texture = Texture::test_pattern();
         let b = scene.materials.last_mut().unwrap();
         b.ambient = 0.;
         b.transparency = 1.0;

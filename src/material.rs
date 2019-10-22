@@ -6,7 +6,7 @@ use crate::tuple::*;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Material {
-    pub color: Color,
+    pub texture: Texture,
     pub ambient: f32,
     pub diffuse: f32,
     pub specular: f32,
@@ -14,13 +14,12 @@ pub struct Material {
     pub reflective: f32,
     pub transparency: f32,
     pub refractive_index: f32,
-    pub texture: Option<Texture>,
 }
 
 impl Material {
     pub fn new() -> Self {
         Material {
-            color: Color::WHITE,
+            texture: Texture::constant(Color::WHITE),
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -28,12 +27,16 @@ impl Material {
             reflective: 0.0,
             transparency: 0.0,
             refractive_index: 1.0,
-            texture: None,
         }
     }
 
     pub fn color(mut self, color: Color) -> Self {
-        self.color = color;
+        self.texture = Texture::constant(color);
+        self
+    }
+
+    pub fn texture(mut self, texture: Texture) -> Self {
+        self.texture = texture;
         self
     }
 
@@ -72,11 +75,6 @@ impl Material {
         self
     }
 
-    pub fn texture(mut self, texture: Texture) -> Self {
-        self.texture = Some(texture);
-        self
-    }
-
     /// Computes the color of the surface at the given point.
     pub fn lighting(
         self,
@@ -87,10 +85,7 @@ impl Material {
         normalv: Tuple4,
         in_shadow: bool,
     ) -> Color {
-        let base_color = match self.texture {
-            Some(texture) => texture.evaluate(transform, point),
-            None => self.color,
-        };
+        let base_color = self.texture.evaluate(transform, point);
 
         // Combine the surface color with the light's color/intensity.
         let effective_color = base_color * light.intensity;
@@ -138,7 +133,7 @@ mod tests {
     #[test]
     fn the_default_material() {
         let m = Material::new();
-        assert_eq!(m.color, Color::new(1., 1., 1.));
+        assert_eq!(m.texture, Texture::constant(Color::WHITE));
         assert_eq!(m.ambient, 0.1);
         assert_eq!(m.diffuse, 0.9);
         assert_eq!(m.specular, 0.9);
@@ -233,7 +228,7 @@ mod tests {
     #[test]
     fn lighting_with_a_texture_applied() {
         let mut m = Material::new();
-        m.texture = Some(Texture::stripe(Color::WHITE, Color::BLACK));
+        m.texture = Texture::stripe(Color::WHITE, Color::BLACK);
         m.ambient = 1.0;
         m.diffuse = 0.0;
         m.specular = 0.0;

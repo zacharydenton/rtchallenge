@@ -79,7 +79,7 @@ fn main() {
             .transform(
                 Transform::new()
                     .translate(-1.7, 0.33, -0.75)
-                    .scale(0.33, 0.7, 0.33)
+                    .scale(0.33, 0.7, 0.33),
             )
             .material(
                 Material::new()

@@ -891,4 +891,35 @@ mod tests {
         let r = ray(point3(0., 0., -5.), vector3(0., 0., 1.));
         bencher.iter(|| scene.color_at(r));
     }
+
+    #[bench]
+    fn bench_finding_n1_and_n2(bencher: &mut Bencher) {
+        let mut scene = Scene::new();
+
+        scene.add_object(
+            Object::new()
+                .geometry(Geometry::sphere())
+                .transform(Transform::new().scale(2., 2., 2.))
+                .material(Material::new().transparency(1.).refractive_index(1.5)),
+        );
+        scene.add_object(
+            Object::new()
+                .geometry(Geometry::sphere())
+                .transform(Transform::new().translate(0., 0., -0.25))
+                .material(Material::new().transparency(1.).refractive_index(2.0)),
+        );
+        scene.add_object(
+            Object::new()
+                .geometry(Geometry::sphere())
+                .transform(Transform::new().translate(0., 0., 0.25))
+                .material(Material::new().transparency(1.).refractive_index(2.5)),
+        );
+
+        let r = ray(point3(0., 0., -4.), vector3(0., 0., 1.));
+        let intersection = scene.nearest_intersection(r).unwrap();
+
+        bencher.iter(|| {
+            let (_n1, _n2) = scene.refractive_indexes(r, intersection);
+        });
+    }
 }

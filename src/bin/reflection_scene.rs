@@ -148,6 +148,6 @@ fn main() {
             ),
     );
 
-    let canvas = camera.render(scene);
+    let canvas = camera.render(scene, 10);
     print!("{}", canvas_to_ppm(canvas));
 }

@@ -1,11 +1,12 @@
 use crate::canvas::*;
+use crate::color::*;
 use crate::ray::*;
 use crate::scene::*;
 use crate::transform::*;
 use crate::tuple::*;
 
+use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
-use rand::SeedableRng;
 
 pub struct Camera {
     pub hsize: usize,
@@ -45,10 +46,10 @@ impl Camera {
 
     /// Returns a ray that starts at the camera and passes through the indicated
     /// (x, y) pixel on the canvas.
-    pub fn ray(&self, x: usize, y: usize) -> Ray {
+    pub fn ray<R: Rng>(&self, rng: &mut R, x: usize, y: usize) -> Ray {
         // The offset from the edge of the canvas to the pixel's center.
-        let xoffset = (x as f32 + 0.5) * self.pixel_size;
-        let yoffset = (y as f32 + 0.5) * self.pixel_size;
+        let xoffset = (x as f32 + rng.gen::<f32>()) * self.pixel_size;
+        let yoffset = (y as f32 + rng.gen::<f32>()) * self.pixel_size;
 
         // The untransformed coordinates of the pixel in world space.
         // (The camera looks toward -z, so +x is to the left.)
@@ -69,14 +70,18 @@ impl Camera {
         self.transform = transform;
     }
 
-    pub fn render(&self, scene: Scene) -> Canvas {
+    pub fn render(&self, scene: Scene, num_samples: usize) -> Canvas {
         let mut rng = SmallRng::from_entropy();
         let mut image = Canvas::new(self.hsize, self.vsize);
 
         for y in 0..image.height {
             for x in 0..image.width {
-                let ray = self.ray(x, y);
-                let color = scene.color_at(&mut rng, ray);
+                let mut color = Color::BLACK;
+                for _ in 0..num_samples {
+                    let ray = self.ray(&mut rng, x, y);
+                    color = color + scene.color_at(&mut rng, ray);
+                }
+                color = color * (num_samples as f32).recip();
                 image.set_color(x, y, color);
             }
         }
@@ -123,8 +128,9 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_through_the_center_of_the_canvas() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
-        let r = c.ray(100, 50);
+        let r = c.ray(&mut rng, 100, 50);
 
         assert_approx_eq!(r.origin.x, 0., 1e-5);
         assert_approx_eq!(r.origin.y, 0., 1e-5);
@@ -136,8 +142,9 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_through_a_corner_of_the_canvas() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
-        let r = c.ray(0, 0);
+        let r = c.ray(&mut rng, 0, 0);
 
         assert_approx_eq!(r.origin.x, 0., 1e-5);
         assert_approx_eq!(r.origin.y, 0., 1e-5);
@@ -149,13 +156,14 @@ mod tests {
 
     #[test]
     fn constructing_a_ray_when_the_camera_is_transformed() {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
         c.set_transform(
             Transform::new()
                 .rotate_y(std::f32::consts::FRAC_PI_4)
                 .translate(0., -2., 5.),
         );
-        let r = c.ray(100, 50);
+        let r = c.ray(&mut rng, 100, 50);
 
         assert_approx_eq!(r.origin.x, 0., 1e-5);
         assert_approx_eq!(r.origin.y, 2., 1e-5);
@@ -189,7 +197,7 @@ mod tests {
         let up = vector3(0., 1., 0.);
         camera.set_transform(Transform::look_at(from, to, up));
 
-        let image = camera.render(scene);
+        let image = camera.render(scene, 1);
         let pixel = image.get_color(5, 5);
 
         assert_approx_eq!(pixel.r, 0.38066, 1e-2);
@@ -199,12 +207,13 @@ mod tests {
 
     #[bench]
     fn bench_constructing_a_ray_when_the_camera_is_transformed(bencher: &mut Bencher) {
+        let mut rng = SmallRng::seed_from_u64(0);
         let mut c = Camera::new(201, 101, std::f32::consts::FRAC_PI_2);
         c.set_transform(
             Transform::new()
                 .rotate_y(std::f32::consts::FRAC_PI_4)
                 .translate(0., -2., 5.),
         );
-        bencher.iter(|| c.ray(100, 50));
+        bencher.iter(|| c.ray(&mut rng, 100, 50));
     }
 }

@@ -1,11 +1,11 @@
 use crate::texture::*;
 use std::ops::*;
 
-pub fn evaluate<T: Add<Output = T> + Sub<Output = T> + Mul<f32, Output = T> + Copy>(
+pub fn evaluate<O: Add + Mul<f32>, T: Add + Sub<Output = O>>(
     point: Tuple4,
     a: T,
     b: T,
-) -> T {
+) -> O {
     let distance = b - a;
     let fraction = point.x.fract();
     a + distance * fraction

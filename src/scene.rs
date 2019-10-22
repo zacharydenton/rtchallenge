@@ -9,15 +9,15 @@ use crate::transform::*;
 use crate::tuple::*;
 use rand::Rng;
 
-pub struct Scene {
+pub struct Scene<'scene> {
     lights: Vec<Light>,
     transforms: Vec<Transform>,
-    materials: Vec<Material>,
+    materials: Vec<Material<'scene>>,
     geometrys: Vec<Geometry>,
     max_depth: usize,
 }
 
-impl Scene {
+impl<'scene> Scene<'scene> {
     pub fn new() -> Self {
         Scene {
             lights: vec![],
@@ -44,7 +44,7 @@ impl Scene {
 
         if let Some(intersection) = self.nearest_intersection(world_ray) {
             let transform = self.transforms[intersection.object_id];
-            let material = self.materials[intersection.object_id];
+            let material = &self.materials[intersection.object_id];
             let geometry = self.geometrys[intersection.object_id];
 
             // Compute the surface normal.
@@ -194,7 +194,7 @@ impl Scene {
     }
 
     /// Adds the object to the scene, returning its ID.
-    pub fn add_object(&mut self, object: Object) -> ObjectId {
+    pub fn add_object(&mut self, object: Object<'scene>) -> ObjectId {
         let object_id = self.transforms.len();
 
         self.transforms.push(object.transform);
@@ -263,7 +263,7 @@ mod tests {
     use rand::SeedableRng;
     use test::Bencher;
 
-    fn default_scene() -> Scene {
+    fn default_scene<'a>() -> Scene<'a> {
         let mut scene = Scene::new();
         scene.add_light(Light::new(point3(-10., 10., -10.), Color::new(1., 1., 1.)));
         scene.add_object(

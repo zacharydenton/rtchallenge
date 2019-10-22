@@ -5,9 +5,9 @@ use crate::transform::*;
 use crate::tuple::*;
 use rand::Rng;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Material {
-    pub texture: Texture,
+#[derive(Clone, Debug, PartialEq)]
+pub struct Material<'a> {
+    pub texture: Texture<'a>,
     pub ambient: f32,
     pub diffuse: f32,
     pub specular: f32,
@@ -17,7 +17,7 @@ pub struct Material {
     pub refractive_index: f32,
 }
 
-impl Material {
+impl<'a> Material<'a> {
     pub fn new() -> Self {
         Material {
             texture: Texture::constant(Color::WHITE),
@@ -36,7 +36,7 @@ impl Material {
         self
     }
 
-    pub fn texture(mut self, texture: Texture) -> Self {
+    pub fn texture(mut self, texture: Texture<'a>) -> Self {
         self.texture = texture;
         self
     }
@@ -78,7 +78,7 @@ impl Material {
 
     /// Computes the color of the surface at the given point.
     pub fn lighting<R: Rng>(
-        self,
+        &self,
         rng: &mut R,
         transform: Transform,
         light: Light,

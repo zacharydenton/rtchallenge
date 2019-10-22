@@ -4,15 +4,15 @@ use crate::transform::*;
 
 pub type ObjectId = usize;
 
-pub struct Object {
+pub struct Object<'a> {
     pub transform: Transform,
     pub geometry: Geometry,
-    pub material: Material,
+    pub material: Material<'a>,
     pub parent: Option<ObjectId>,
 }
 
-impl Object {
-    pub fn new() -> Object {
+impl<'a> Object<'a> {
+    pub fn new() -> Object<'a> {
         Object {
             transform: Transform::new(),
             geometry: Geometry::sphere(),
@@ -31,7 +31,7 @@ impl Object {
         self
     }
 
-    pub fn material(mut self, material: Material) -> Self {
+    pub fn material(mut self, material: Material<'a>) -> Self {
         self.material = material;
         self
     }

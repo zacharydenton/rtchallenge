@@ -5,9 +5,9 @@ use rtchallenge::geometry::*;
 use rtchallenge::light::*;
 use rtchallenge::material::*;
 use rtchallenge::object::*;
-use rtchallenge::pattern::*;
 use rtchallenge::ppm::*;
 use rtchallenge::scene::*;
+use rtchallenge::texture::*;
 use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
@@ -22,18 +22,18 @@ fn main() {
     let mut scene = Scene::new();
     scene.add_light(Light::new(point3(-0.5, 2.7, -1.3), Color::new(1., 1., 1.)));
 
-    let mut floor_pattern =
-        radial_gradient_pattern(Color::new(0.9, 0.1, 0.6), Color::new(0.1, 0.1, 0.3));
-    floor_pattern.transform = Transform::new().scale(2., 2., 2.);
+    let mut floor_texture =
+        Texture::radial_gradient(Color::new(0.9, 0.1, 0.6), Color::new(0.1, 0.1, 0.3));
+    floor_texture.transform = Transform::new().scale(2., 2., 2.);
     scene.add_object(
         Object::new()
             .geometry(Geometry::plane())
-            .material(Material::new().pattern(floor_pattern).specular(0.1)),
+            .material(Material::new().texture(floor_texture).specular(0.1)),
     );
 
-    let mut wall_pattern = ring_pattern(Color::new(1., 1., 1.), Color::new(0.1, 0.1, 0.9));
-    wall_pattern.transform = Transform::new().scale(0.2, 0.2, 0.2);
-    let wall_material = Material::new().pattern(wall_pattern).specular(0.2);
+    let mut wall_texture = Texture::ring(Color::new(1., 1., 1.), Color::new(0.1, 0.1, 0.9));
+    wall_texture.transform = Transform::new().scale(0.2, 0.2, 0.2);
+    let wall_material = Material::new().texture(wall_texture).specular(0.2);
     scene.add_object(
         Object::new()
             .geometry(Geometry::plane())
@@ -99,8 +99,9 @@ fn main() {
             .material(wall_material),
     );
 
-    let mut middle_pattern = checkers_pattern(Color::new(0.1, 1., 0.5), Color::new(1., 1., 1.));
-    middle_pattern.transform = Transform::new().scale(0.5, 0.5, 0.5);
+    let mut middle_texture =
+        Texture::checkerboard_3d(Color::new(0.1, 1., 0.5), Color::new(1., 1., 1.));
+    middle_texture.transform = Transform::new().scale(0.5, 0.5, 0.5);
     scene.add_object(
         Object::new()
             .geometry(Geometry::sphere())
@@ -112,7 +113,7 @@ fn main() {
             )
             .material(
                 Material::new()
-                    .pattern(middle_pattern)
+                    .texture(middle_texture)
                     .diffuse(0.7)
                     .specular(0.3),
             ),
@@ -130,7 +131,7 @@ fn main() {
             )
             .material(
                 Material::new()
-                    .pattern(linear_gradient_pattern(
+                    .texture(Texture::linear_gradient(
                         Color::new(1.0, 0.1, 0.2),
                         Color::new(0.1, 0.4, 0.9),
                     ))
@@ -139,8 +140,8 @@ fn main() {
             ),
     );
 
-    let mut left_pattern = stripe_pattern(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
-    left_pattern.transform = Transform::new()
+    let mut left_texture = Texture::stripe(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
+    left_texture.transform = Transform::new()
         .scale(0.2, 1., 1.)
         .rotate_y(std::f32::consts::FRAC_PI_4);
     scene.add_object(
@@ -154,7 +155,7 @@ fn main() {
             )
             .material(
                 Material::new()
-                    .pattern(left_pattern)
+                    .texture(left_texture)
                     .diffuse(0.7)
                     .specular(0.3),
             ),

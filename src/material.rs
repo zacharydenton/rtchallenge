@@ -1,6 +1,6 @@
 use crate::color::*;
 use crate::light::*;
-use crate::pattern::*;
+use crate::texture::*;
 use crate::transform::*;
 use crate::tuple::*;
 
@@ -14,13 +14,13 @@ pub struct Material {
     pub reflective: f32,
     pub transparency: f32,
     pub refractive_index: f32,
-    pub pattern: Option<Pattern>,
+    pub texture: Option<Texture>,
 }
 
 impl Material {
     pub fn new() -> Self {
         Material {
-            color: Color::new(1., 1., 1.),
+            color: Color::WHITE,
             ambient: 0.1,
             diffuse: 0.9,
             specular: 0.9,
@@ -28,7 +28,7 @@ impl Material {
             reflective: 0.0,
             transparency: 0.0,
             refractive_index: 1.0,
-            pattern: None,
+            texture: None,
         }
     }
 
@@ -72,8 +72,8 @@ impl Material {
         self
     }
 
-    pub fn pattern(mut self, pattern: Pattern) -> Self {
-        self.pattern = Some(pattern);
+    pub fn texture(mut self, texture: Texture) -> Self {
+        self.texture = Some(texture);
         self
     }
 
@@ -87,8 +87,8 @@ impl Material {
         normalv: Tuple4,
         in_shadow: bool,
     ) -> Color {
-        let base_color = match self.pattern {
-            Some(pattern) => pattern.at_object(transform, point),
+        let base_color = match self.texture {
+            Some(texture) => texture.evaluate(transform, point),
             None => self.color,
         };
 
@@ -231,12 +231,9 @@ mod tests {
     }
 
     #[test]
-    fn lighting_with_a_pattern_applied() {
+    fn lighting_with_a_texture_applied() {
         let mut m = Material::new();
-        m.pattern = Some(stripe_pattern(
-            Color::new(1., 1., 1.),
-            Color::new(0., 0., 0.),
-        ));
+        m.texture = Some(Texture::stripe(Color::WHITE, Color::BLACK));
         m.ambient = 1.0;
         m.diffuse = 0.0;
         m.specular = 0.0;
@@ -259,7 +256,7 @@ mod tests {
             normalv,
             false,
         );
-        assert_eq!(c1, Color::new(1., 1., 1.));
-        assert_eq!(c2, Color::new(0., 0., 0.));
+        assert_eq!(c1, Color::WHITE);
+        assert_eq!(c2, Color::BLACK);
     }
 }

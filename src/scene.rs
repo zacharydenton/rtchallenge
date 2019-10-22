@@ -37,11 +37,7 @@ impl Scene {
     /// intersection (with specified remaining depth).
     fn color_at_remaining(&self, world_ray: Ray, remaining: usize) -> Color {
         if remaining == 0 {
-            return Color {
-                r: 0.,
-                g: 0.,
-                b: 0.,
-            };
+            return Color::BLACK;
         }
 
         if let Some(intersection) = self.nearest_intersection(world_ray) {
@@ -74,11 +70,7 @@ impl Scene {
                 let reflect_ray = ray(over_point, reflect_vector);
                 self.color_at_remaining(reflect_ray, remaining - 1) * material.reflective
             } else {
-                Color {
-                    r: 0.,
-                    g: 0.,
-                    b: 0.,
-                }
+                Color::BLACK
             };
 
             // Compute refract color.
@@ -95,11 +87,7 @@ impl Scene {
 
                 if sin2_t > 1. {
                     // Total internal reflection.
-                    Color {
-                        r: 0.,
-                        g: 0.,
-                        b: 0.,
-                    }
+                    Color::BLACK
                 } else {
                     let cos_t = (1. - sin2_t).sqrt();
                     let direction = world_normal * (n_ratio * cos_i - cos_t) - eye_vector * n_ratio;
@@ -108,11 +96,7 @@ impl Scene {
                     refract_color * material.transparency
                 }
             } else {
-                Color {
-                    r: 0.,
-                    g: 0.,
-                    b: 0.,
-                }
+                Color::BLACK
             };
 
             if material.reflective > 0. && material.transparency > 0. {
@@ -123,11 +107,7 @@ impl Scene {
                 surface_color + reflect_color + refract_color
             }
         } else {
-            Color {
-                r: 0.,
-                g: 0.,
-                b: 0.,
-            }
+            Color::BLACK
         }
     }
 
@@ -274,7 +254,7 @@ pub fn world_normal_at(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pattern::*;
+    use crate::texture::*;
     use assert_approx_eq::assert_approx_eq;
     use test::Bencher;
 
@@ -463,7 +443,7 @@ mod tests {
                 .material(
                     Material::new()
                         .reflective(0.5)
-                        .color(Color::new(0., 0., 0.))
+                        .color(Color::BLACK)
                         .diffuse(0.)
                         .specular(0.),
                 )
@@ -582,7 +562,7 @@ mod tests {
         let mut scene = default_scene();
         let a = scene.materials.first_mut().unwrap();
         a.ambient = 1.0;
-        a.pattern = Some(test_pattern());
+        a.texture = Some(Texture::test_pattern());
         let b = scene.materials.last_mut().unwrap();
         b.ambient = 0.;
         b.transparency = 1.0;

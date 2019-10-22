@@ -5,9 +5,9 @@ use rtchallenge::geometry::*;
 use rtchallenge::light::*;
 use rtchallenge::material::*;
 use rtchallenge::object::*;
-use rtchallenge::pattern::*;
 use rtchallenge::ppm::*;
 use rtchallenge::scene::*;
+use rtchallenge::texture::*;
 use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
@@ -22,9 +22,10 @@ fn main() {
     let mut scene = Scene::new();
     scene.add_light(Light::new(point3(-10., 10., -10.), Color::new(1., 1., 1.)));
 
-    let mut floor_pattern = checkers_pattern(Color::new(1., 1., 1.), Color::new(0., 0., 0.));
-    floor_pattern.transform = Transform::new().scale(0.05, 0.05, 0.05);
-    let floor_material = Material::new().pattern(floor_pattern).specular(0.);
+    let mut floor_texture =
+        Texture::checkerboard_2d(Color::new(1., 1., 1.), Color::new(0., 0., 0.));
+    floor_texture.transform = Transform::new().scale(0.05, 0.05, 0.05);
+    let floor_material = Material::new().texture(floor_texture).specular(0.);
 
     scene.add_object(
         Object::new()
@@ -102,13 +103,13 @@ fn main() {
             )
             .material(
                 Material::new()
-                    .color(Color::new(0.1, 0., 0.))
+                    .color(Color::new(0.5, 0., 0.))
                     .ambient(0.7)
                     .diffuse(0.9)
                     .shininess(300.)
                     .specular(0.9)
                     .reflective(1.0)
-                    .transparency(1.0)
+                    .transparency(0.05)
                     .refractive_index(1.5),
             ),
     );

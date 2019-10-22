@@ -41,15 +41,15 @@ impl Transform {
     }
 
     /// Translates by the specified amount in each axis.
-    pub fn translate(mut self, x: f32, y: f32, z: f32) -> Self {
+    pub fn translate(&mut self, x: f32, y: f32, z: f32) -> Self {
         let translate_matrix = matrix4(1., 0., 0., x, 0., 1., 0., y, 0., 0., 1., z, 0., 0., 0., 1.);
         self.local_to_world = self.local_to_world * translate_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 
     /// Rotates around the x-axis by the angle in radians.
-    pub fn rotate_x(mut self, radians: f32) -> Self {
+    pub fn rotate_x(&mut self, radians: f32) -> Self {
         let rotation_matrix = matrix4(
             1.,
             0.,
@@ -70,11 +70,11 @@ impl Transform {
         );
         self.local_to_world = self.local_to_world * rotation_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 
     /// Rotates around the y-axis by the angle in radians.
-    pub fn rotate_y(mut self, radians: f32) -> Self {
+    pub fn rotate_y(&mut self, radians: f32) -> Self {
         let rotation_matrix = matrix4(
             radians.cos(),
             0.,
@@ -95,11 +95,11 @@ impl Transform {
         );
         self.local_to_world = self.local_to_world * rotation_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 
     /// Rotates around the z-axis by the angle in radians.
-    pub fn rotate_z(mut self, radians: f32) -> Self {
+    pub fn rotate_z(&mut self, radians: f32) -> Self {
         let rotation_matrix = matrix4(
             radians.cos(),
             -radians.sin(),
@@ -120,25 +120,25 @@ impl Transform {
         );
         self.local_to_world = self.local_to_world * rotation_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 
     /// Scales by the specified amount in each axis.
-    pub fn scale(mut self, x: f32, y: f32, z: f32) -> Self {
+    pub fn scale(&mut self, x: f32, y: f32, z: f32) -> Self {
         let scale_matrix = matrix4(x, 0., 0., 0., 0., y, 0., 0., 0., 0., z, 0., 0., 0., 0., 1.);
         self.local_to_world = self.local_to_world * scale_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 
     /// Applies the shear transformation.
-    pub fn shear(mut self, xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Self {
+    pub fn shear(&mut self, xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Self {
         let shear_matrix = matrix4(
             1., xy, xz, 0., yx, 1., yz, 0., zx, zy, 1., 0., 0., 0., 0., 1.,
         );
         self.local_to_world = self.local_to_world * shear_matrix;
         self.world_to_local = self.local_to_world.inverse();
-        self
+        *self
     }
 }
 

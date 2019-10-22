@@ -5,9 +5,9 @@ use rtchallenge::geometry::*;
 use rtchallenge::light::*;
 use rtchallenge::material::*;
 use rtchallenge::object::*;
-use rtchallenge::pattern::*;
 use rtchallenge::ppm::*;
 use rtchallenge::scene::*;
+use rtchallenge::texture::*;
 use rtchallenge::transform::*;
 use rtchallenge::tuple::*;
 
@@ -22,15 +22,16 @@ fn main() {
     let mut scene = Scene::new();
     scene.add_light(Light::new(point3(-5., 4.5, -2.), Color::new(1.8, 1.8, 1.8)));
 
-    let mut floor_pattern = checkers_pattern(Color::new(1., 1., 1.), Color::new(0., 0., 0.));
-    floor_pattern.transform = Transform::new().scale(0.1, 1.0, 0.1);
+    let mut floor_texture =
+        Texture::checkerboard_2d(Color::new(1., 1., 1.), Color::new(0., 0., 0.));
+    floor_texture.transform = Transform::new().scale(0.1, 1.0, 0.1);
     scene.add_object(
         Object::new()
             .geometry(Geometry::cube())
             .transform(Transform::new().translate(0., 0.5, 0.).scale(10., 10., 10.))
             .material(
                 Material::new()
-                    .pattern(floor_pattern)
+                    .texture(floor_texture)
                     .diffuse(0.4)
                     .specular(0.8)
                     .shininess(30.)
@@ -38,8 +39,8 @@ fn main() {
             ),
     );
 
-    let mut walls_pattern = ring_pattern(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
-    walls_pattern.transform = Transform::new()
+    let mut walls_texture = Texture::ring(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
+    walls_texture.transform = Transform::new()
         .rotate_z(std::f32::consts::FRAC_PI_6)
         .scale(0.01, 0.01, 0.01);
     scene.add_object(
@@ -48,7 +49,7 @@ fn main() {
             .transform(Transform::new().scale(9., 20., 9.))
             .material(
                 Material::new()
-                    .pattern(walls_pattern)
+                    .texture(walls_texture)
                     .diffuse(0.3)
                     .specular(0.3)
                     .shininess(100.)
@@ -56,10 +57,11 @@ fn main() {
             ),
     );
 
-    let mut table_pattern = stripe_pattern(Color::new(0.8, 0.5, 0.1), Color::new(0.75, 0.45, 0.08));
-    table_pattern.transform = Transform::new().rotate_y(5.3).scale(0.05, 0.05, 0.05);
+    let mut table_texture =
+        Texture::stripe(Color::new(0.8, 0.5, 0.1), Color::new(0.75, 0.45, 0.08));
+    table_texture.transform = Transform::new().rotate_y(5.3).scale(0.05, 0.05, 0.05);
     let table_material = Material::new()
-        .pattern(table_pattern)
+        .texture(table_texture)
         .diffuse(0.3)
         .specular(0.3)
         .shininess(100.)

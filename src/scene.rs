@@ -55,17 +55,18 @@ impl Scene {
             // Compute surface color.
             let over_point = world_point + world_normal * 1e-3;
             let under_point = world_point - world_normal * 1e-3;
-            let light = self.lights[0]; // TODO: Support more than one light.
-            let in_shadow = self.is_shadowed(over_point, light);
-            let surface_color = material.lighting(
-                rng,
-                transform,
-                light,
-                world_point,
-                eye_vector,
-                world_normal,
-                in_shadow,
-            );
+            let surface_color = self.lights.iter().fold(Color::BLACK, |acc, &light| {
+                let in_shadow = self.is_shadowed(over_point, light);
+                acc + material.lighting(
+                    rng,
+                    transform,
+                    light,
+                    world_point,
+                    eye_vector,
+                    world_normal,
+                    in_shadow,
+                )
+            });
 
             // Compute reflect color.
             let reflect_color = if material.reflective > 0. && remaining > 0 {

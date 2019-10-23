@@ -31,7 +31,7 @@ fn main() {
     // an optional second light for additional illumination
     scene.add_light(Light::new(
         point3(-400., 50., -10.),
-        Color::new(0.2, 0.2, 0.2),
+        Color::new(0.3, 0.3, 0.3),
     ));
 
     // ======================================================
@@ -41,7 +41,7 @@ fn main() {
         Material::new()
             .color(Color::new(1., 1., 1.))
             .diffuse(0.7)
-            .ambient(0.1)
+            .ambient(0.25)
             .specular(0.0)
             .reflective(0.1)
     };
@@ -50,7 +50,7 @@ fn main() {
         Material::new()
             .color(Color::new(0.537, 0.831, 0.914))
             .diffuse(0.7)
-            .ambient(0.1)
+            .ambient(0.25)
             .specular(0.0)
             .reflective(0.1)
     };
@@ -59,7 +59,7 @@ fn main() {
         Material::new()
             .color(Color::new(0.941, 0.322, 0.388))
             .diffuse(0.7)
-            .ambient(0.1)
+            .ambient(0.25)
             .specular(0.0)
             .reflective(0.1)
     };
@@ -68,7 +68,7 @@ fn main() {
         Material::new()
             .color(Color::new(0.373, 0.404, 0.550))
             .diffuse(0.7)
-            .ambient(0.1)
+            .ambient(0.25)
             .specular(0.0)
             .reflective(0.1)
     };

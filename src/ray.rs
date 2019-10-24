@@ -17,7 +17,12 @@ pub fn ray(origin: Tuple4, direction: Tuple4) -> Ray {
 impl Ray {
     /// Computes the point at the given distance t along the ray.
     pub fn position(&self, t: f32) -> Tuple4 {
-        self.origin + self.direction * t
+        Tuple4 {
+            x: self.direction.x.mul_add(t, self.origin.x),
+            y: self.direction.y.mul_add(t, self.origin.y),
+            z: self.direction.z.mul_add(t, self.origin.z),
+            w: self.direction.w.mul_add(t, self.origin.w),
+        }
     }
 
     /// Returns a new ray with the given transformation matrix applied to origin
@@ -31,6 +36,7 @@ impl Ray {
 mod tests {
     use super::*;
     use crate::transform::*;
+    use test::Bencher;
 
     #[test]
     fn creating_and_querying_a_ray() {
@@ -66,5 +72,11 @@ mod tests {
         let r2 = r.transform(m);
         assert_eq!(r2.origin, point3(2., 6., 12.));
         assert_eq!(r2.direction, vector3(0., 3., 0.,));
+    }
+
+    #[bench]
+    fn bench_position_on_a_ray(bencher: &mut Bencher) {
+        let r = ray(point3(1., 2., 3.), vector3(1., 1., 1.).normalize());
+        bencher.iter(|| r.position(4.5));
     }
 }

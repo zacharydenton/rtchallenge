@@ -76,102 +76,190 @@ pub fn matrix3(
 impl Matrix3 {
     pub fn submatrix(&self, row: usize, column: usize) -> Matrix2 {
         match (row, column) {
-            (0, 0) => Matrix2 {
-                x0: self.y1,
-                x1: self.y2,
-                y0: self.z1,
-                y1: self.z2,
-            },
-            (0, 1) => Matrix2 {
-                x0: self.y0,
-                x1: self.y2,
-                y0: self.z0,
-                y1: self.z2,
-            },
-            (0, 2) => Matrix2 {
-                x0: self.y0,
-                x1: self.y1,
-                y0: self.z0,
-                y1: self.z1,
-            },
-            (1, 0) => Matrix2 {
-                x0: self.x1,
-                x1: self.x2,
-                y0: self.z1,
-                y1: self.z2,
-            },
-            (1, 1) => Matrix2 {
-                x0: self.x0,
-                x1: self.x2,
-                y0: self.z0,
-                y1: self.z2,
-            },
-            (1, 2) => Matrix2 {
-                x0: self.x0,
-                x1: self.x1,
-                y0: self.z0,
-                y1: self.z1,
-            },
-            (2, 0) => Matrix2 {
-                x0: self.x1,
-                x1: self.x2,
-                y0: self.y1,
-                y1: self.y2,
-            },
-            (2, 1) => Matrix2 {
-                x0: self.x0,
-                x1: self.x2,
-                y0: self.y0,
-                y1: self.y2,
-            },
-            (2, 2) => Matrix2 {
-                x0: self.x0,
-                x1: self.x1,
-                y0: self.y0,
-                y1: self.y1,
-            },
+            (0, 0) => self.submatrix_00(),
+            (0, 1) => self.submatrix_01(),
+            (0, 2) => self.submatrix_02(),
+            (1, 0) => self.submatrix_10(),
+            (1, 1) => self.submatrix_11(),
+            (1, 2) => self.submatrix_12(),
+            (2, 0) => self.submatrix_20(),
+            (2, 1) => self.submatrix_21(),
+            (2, 2) => self.submatrix_22(),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
 
     #[inline]
+    fn submatrix_00(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.y1,
+            x1: self.y2,
+            y0: self.z1,
+            y1: self.z2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_01(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.y0,
+            x1: self.y2,
+            y0: self.z0,
+            y1: self.z2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_02(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.y0,
+            x1: self.y1,
+            y0: self.z0,
+            y1: self.z1,
+        }
+    }
+
+    #[inline]
+    fn submatrix_10(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x1,
+            x1: self.x2,
+            y0: self.z1,
+            y1: self.z2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_11(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x0,
+            x1: self.x2,
+            y0: self.z0,
+            y1: self.z2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_12(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x0,
+            x1: self.x1,
+            y0: self.z0,
+            y1: self.z1,
+        }
+    }
+
+    #[inline]
+    fn submatrix_20(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x1,
+            x1: self.x2,
+            y0: self.y1,
+            y1: self.y2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_21(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x0,
+            x1: self.x2,
+            y0: self.y0,
+            y1: self.y2,
+        }
+    }
+
+    #[inline]
+    fn submatrix_22(&self) -> Matrix2 {
+        Matrix2 {
+            x0: self.x0,
+            x1: self.x1,
+            y0: self.y0,
+            y1: self.y1,
+        }
+    }
+
     pub fn minor(&self, row: usize, column: usize) -> f32 {
         match (row, column) {
-            (0, 0) => (self.y1.mul_add(self.z2, -self.y2 * self.z1)),
-            (0, 1) => (self.y0.mul_add(self.z2, -self.y2 * self.z0)),
-            (0, 2) => (self.y0.mul_add(self.z1, -self.y1 * self.z0)),
-            (1, 0) => (self.x1.mul_add(self.z2, -self.x2 * self.z1)),
-            (1, 1) => (self.x0.mul_add(self.z2, -self.x2 * self.z0)),
-            (1, 2) => (self.x0.mul_add(self.z1, -self.x1 * self.z0)),
-            (2, 0) => (self.x1.mul_add(self.y2, -self.x2 * self.y1)),
-            (2, 1) => (self.x0.mul_add(self.y2, -self.x2 * self.y0)),
-            (2, 2) => (self.x0.mul_add(self.y1, -self.x1 * self.y0)),
+            (0, 0) => self.minor_00(),
+            (0, 1) => self.minor_01(),
+            (0, 2) => self.minor_02(),
+            (1, 0) => self.minor_10(),
+            (1, 1) => self.minor_11(),
+            (1, 2) => self.minor_12(),
+            (2, 0) => self.minor_20(),
+            (2, 1) => self.minor_21(),
+            (2, 2) => self.minor_22(),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
 
     #[inline]
+    fn minor_00(&self) -> f32 {
+        self.y1.mul_add(self.z2, -self.y2 * self.z1)
+    }
+
+    #[inline]
+    fn minor_01(&self) -> f32 {
+        self.y0.mul_add(self.z2, -self.y2 * self.z0)
+    }
+
+    #[inline]
+    fn minor_02(&self) -> f32 {
+        self.y0.mul_add(self.z1, -self.y1 * self.z0)
+    }
+
+    #[inline]
+    fn minor_10(&self) -> f32 {
+        self.x1.mul_add(self.z2, -self.x2 * self.z1)
+    }
+
+    #[inline]
+    fn minor_11(&self) -> f32 {
+        self.x0.mul_add(self.z2, -self.x2 * self.z0)
+    }
+
+    #[inline]
+    fn minor_12(&self) -> f32 {
+        self.x0.mul_add(self.z1, -self.x1 * self.z0)
+    }
+
+    #[inline]
+    fn minor_20(&self) -> f32 {
+        self.x1.mul_add(self.y2, -self.x2 * self.y1)
+    }
+
+    #[inline]
+    fn minor_21(&self) -> f32 {
+        self.x0.mul_add(self.y2, -self.x2 * self.y0)
+    }
+
+    #[inline]
+    fn minor_22(&self) -> f32 {
+        self.x0.mul_add(self.y1, -self.x1 * self.y0)
+    }
+
     pub fn cofactor(&self, row: usize, column: usize) -> f32 {
         match (row, column) {
-            (0, 0) => (self.y1.mul_add(self.z2, -self.y2 * self.z1)),
-            (0, 1) => -(self.y0.mul_add(self.z2, -self.y2 * self.z0)),
-            (0, 2) => (self.y0.mul_add(self.z1, -self.y1 * self.z0)),
-            (1, 0) => -(self.x1.mul_add(self.z2, -self.x2 * self.z1)),
-            (1, 1) => (self.x0.mul_add(self.z2, -self.x2 * self.z0)),
-            (1, 2) => -(self.x0.mul_add(self.z1, -self.x1 * self.z0)),
-            (2, 0) => (self.x1.mul_add(self.y2, -self.x2 * self.y1)),
-            (2, 1) => -(self.x0.mul_add(self.y2, -self.x2 * self.y0)),
-            (2, 2) => (self.x0.mul_add(self.y1, -self.x1 * self.y0)),
+            (0, 0) => self.minor_00(),
+            (0, 1) => -self.minor_01(),
+            (0, 2) => self.minor_02(),
+            (1, 0) => -self.minor_10(),
+            (1, 1) => self.minor_11(),
+            (1, 2) => -self.minor_12(),
+            (2, 0) => self.minor_20(),
+            (2, 1) => -self.minor_21(),
+            (2, 2) => self.minor_22(),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
 
-    #[inline]
     pub fn determinant(&self) -> f32 {
         self.x0.mul_add(
-            self.y1.mul_add(self.z2, -self.y2 * self.z1),
-            self.x2 * self.y0.mul_add(self.z1, -self.y1 * self.z0),
-        ) - self.x1 * self.y0.mul_add(self.z2, -self.y2 * self.z0)
+            self.minor_00(),
+            self.x1
+                .mul_add(-self.minor_01(), self.x2 * self.minor_02()),
+        )
     }
 }
 
@@ -294,183 +382,247 @@ impl Matrix4 {
 
     pub fn submatrix(&self, row: usize, column: usize) -> Matrix3 {
         match (row, column) {
-            (0, 0) => Matrix3 {
-                x0: self.y1,
-                y0: self.z1,
-                z0: self.w1,
-                x1: self.y2,
-                y1: self.z2,
-                z1: self.w2,
-                x2: self.y3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (0, 1) => Matrix3 {
-                x0: self.y0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.y2,
-                y1: self.z2,
-                z1: self.w2,
-                x2: self.y3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (0, 2) => Matrix3 {
-                x0: self.y0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.y1,
-                y1: self.z1,
-                z1: self.w1,
-                x2: self.y3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (0, 3) => Matrix3 {
-                x0: self.y0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.y1,
-                y1: self.z1,
-                z1: self.w1,
-                x2: self.y2,
-                y2: self.z2,
-                z2: self.w2,
-            },
-            (1, 0) => Matrix3 {
-                x0: self.x1,
-                y0: self.z1,
-                z0: self.w1,
-                x1: self.x2,
-                y1: self.z2,
-                z1: self.w2,
-                x2: self.x3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (1, 1) => Matrix3 {
-                x0: self.x0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.x2,
-                y1: self.z2,
-                z1: self.w2,
-                x2: self.x3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (1, 2) => Matrix3 {
-                x0: self.x0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.x1,
-                y1: self.z1,
-                z1: self.w1,
-                x2: self.x3,
-                y2: self.z3,
-                z2: self.w3,
-            },
-            (1, 3) => Matrix3 {
-                x0: self.x0,
-                y0: self.z0,
-                z0: self.w0,
-                x1: self.x1,
-                y1: self.z1,
-                z1: self.w1,
-                x2: self.x2,
-                y2: self.z2,
-                z2: self.w2,
-            },
-            (2, 0) => Matrix3 {
-                x0: self.x1,
-                y0: self.y1,
-                z0: self.w1,
-                x1: self.x2,
-                y1: self.y2,
-                z1: self.w2,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.w3,
-            },
-            (2, 1) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.w0,
-                x1: self.x2,
-                y1: self.y2,
-                z1: self.w2,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.w3,
-            },
-            (2, 2) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.w0,
-                x1: self.x1,
-                y1: self.y1,
-                z1: self.w1,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.w3,
-            },
-            (2, 3) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.w0,
-                x1: self.x1,
-                y1: self.y1,
-                z1: self.w1,
-                x2: self.x2,
-                y2: self.y2,
-                z2: self.w2,
-            },
-            (3, 0) => Matrix3 {
-                x0: self.x1,
-                y0: self.y1,
-                z0: self.z1,
-                x1: self.x2,
-                y1: self.y2,
-                z1: self.z2,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.z3,
-            },
-            (3, 1) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.z0,
-                x1: self.x2,
-                y1: self.y2,
-                z1: self.z2,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.z3,
-            },
-            (3, 2) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.z0,
-                x1: self.x1,
-                y1: self.y1,
-                z1: self.z1,
-                x2: self.x3,
-                y2: self.y3,
-                z2: self.z3,
-            },
-            (3, 3) => Matrix3 {
-                x0: self.x0,
-                y0: self.y0,
-                z0: self.z0,
-                x1: self.x1,
-                y1: self.y1,
-                z1: self.z1,
-                x2: self.x2,
-                y2: self.y2,
-                z2: self.z2,
-            },
+            (0, 0) => self.submatrix_00(),
+            (0, 1) => self.submatrix_01(),
+            (0, 2) => self.submatrix_02(),
+            (0, 3) => self.submatrix_03(),
+            (1, 0) => self.submatrix_10(),
+            (1, 1) => self.submatrix_11(),
+            (1, 2) => self.submatrix_12(),
+            (1, 3) => self.submatrix_13(),
+            (2, 0) => self.submatrix_20(),
+            (2, 1) => self.submatrix_21(),
+            (2, 2) => self.submatrix_22(),
+            (2, 3) => self.submatrix_23(),
+            (3, 0) => self.submatrix_30(),
+            (3, 1) => self.submatrix_31(),
+            (3, 2) => self.submatrix_32(),
+            (3, 3) => self.submatrix_33(),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, 2, or 3)."),
+        }
+    }
+
+    fn submatrix_00(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.y1,
+            y0: self.z1,
+            z0: self.w1,
+            x1: self.y2,
+            y1: self.z2,
+            z1: self.w2,
+            x2: self.y3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_01(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.y0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.y2,
+            y1: self.z2,
+            z1: self.w2,
+            x2: self.y3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_02(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.y0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.y1,
+            y1: self.z1,
+            z1: self.w1,
+            x2: self.y3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_03(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.y0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.y1,
+            y1: self.z1,
+            z1: self.w1,
+            x2: self.y2,
+            y2: self.z2,
+            z2: self.w2,
+        }
+    }
+
+    fn submatrix_10(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x1,
+            y0: self.z1,
+            z0: self.w1,
+            x1: self.x2,
+            y1: self.z2,
+            z1: self.w2,
+            x2: self.x3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_11(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.x2,
+            y1: self.z2,
+            z1: self.w2,
+            x2: self.x3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_12(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.x1,
+            y1: self.z1,
+            z1: self.w1,
+            x2: self.x3,
+            y2: self.z3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_13(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.z0,
+            z0: self.w0,
+            x1: self.x1,
+            y1: self.z1,
+            z1: self.w1,
+            x2: self.x2,
+            y2: self.z2,
+            z2: self.w2,
+        }
+    }
+
+    fn submatrix_20(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x1,
+            y0: self.y1,
+            z0: self.w1,
+            x1: self.x2,
+            y1: self.y2,
+            z1: self.w2,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_21(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.w0,
+            x1: self.x2,
+            y1: self.y2,
+            z1: self.w2,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_22(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.w0,
+            x1: self.x1,
+            y1: self.y1,
+            z1: self.w1,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.w3,
+        }
+    }
+
+    fn submatrix_23(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.w0,
+            x1: self.x1,
+            y1: self.y1,
+            z1: self.w1,
+            x2: self.x2,
+            y2: self.y2,
+            z2: self.w2,
+        }
+    }
+
+    fn submatrix_30(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x1,
+            y0: self.y1,
+            z0: self.z1,
+            x1: self.x2,
+            y1: self.y2,
+            z1: self.z2,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.z3,
+        }
+    }
+
+    fn submatrix_31(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.z0,
+            x1: self.x2,
+            y1: self.y2,
+            z1: self.z2,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.z3,
+        }
+    }
+
+    fn submatrix_32(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.z0,
+            x1: self.x1,
+            y1: self.y1,
+            z1: self.z1,
+            x2: self.x3,
+            y2: self.y3,
+            z2: self.z3,
+        }
+    }
+
+    fn submatrix_33(&self) -> Matrix3 {
+        Matrix3 {
+            x0: self.x0,
+            y0: self.y0,
+            z0: self.z0,
+            x1: self.x1,
+            y1: self.y1,
+            z1: self.z1,
+            x2: self.x2,
+            y2: self.y2,
+            z2: self.z2,
         }
     }
 
@@ -478,20 +630,102 @@ impl Matrix4 {
         self.submatrix(row, column).determinant()
     }
 
+    fn minor_00(&self) -> f32 {
+        self.submatrix_00().determinant()
+    }
+
+    fn minor_01(&self) -> f32 {
+        self.submatrix_01().determinant()
+    }
+
+    fn minor_02(&self) -> f32 {
+        self.submatrix_02().determinant()
+    }
+
+    fn minor_03(&self) -> f32 {
+        self.submatrix_03().determinant()
+    }
+
+    fn minor_10(&self) -> f32 {
+        self.submatrix_10().determinant()
+    }
+
+    fn minor_11(&self) -> f32 {
+        self.submatrix_11().determinant()
+    }
+
+    fn minor_12(&self) -> f32 {
+        self.submatrix_12().determinant()
+    }
+
+    fn minor_13(&self) -> f32 {
+        self.submatrix_13().determinant()
+    }
+
+    fn minor_20(&self) -> f32 {
+        self.submatrix_20().determinant()
+    }
+
+    fn minor_21(&self) -> f32 {
+        self.submatrix_21().determinant()
+    }
+
+    fn minor_22(&self) -> f32 {
+        self.submatrix_22().determinant()
+    }
+
+    fn minor_23(&self) -> f32 {
+        self.submatrix_23().determinant()
+    }
+
+    fn minor_30(&self) -> f32 {
+        self.submatrix_30().determinant()
+    }
+
+    fn minor_31(&self) -> f32 {
+        self.submatrix_31().determinant()
+    }
+
+    fn minor_32(&self) -> f32 {
+        self.submatrix_32().determinant()
+    }
+
+    fn minor_33(&self) -> f32 {
+        self.submatrix_33().determinant()
+    }
+
     pub fn cofactor(&self, row: usize, column: usize) -> f32 {
-        if row + column & 1 == 1 {
-            -self.minor(row, column)
-        } else {
-            self.minor(row, column)
+        match (row, column) {
+            (0, 0) => self.minor_00(),
+            (0, 1) => -self.minor_01(),
+            (0, 2) => self.minor_02(),
+            (0, 3) => -self.minor_03(),
+            (1, 0) => -self.minor_10(),
+            (1, 1) => self.minor_11(),
+            (1, 2) => -self.minor_12(),
+            (1, 3) => self.minor_13(),
+            (2, 0) => self.minor_20(),
+            (2, 1) => -self.minor_21(),
+            (2, 2) => self.minor_22(),
+            (2, 3) => -self.minor_23(),
+            (3, 0) => -self.minor_30(),
+            (3, 1) => self.minor_31(),
+            (3, 2) => -self.minor_32(),
+            (3, 3) => self.minor_33(),
+            (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, 2, or 3)."),
         }
     }
 
     pub fn determinant(&self) -> f32 {
-        self.x0
-            .mul_add(self.minor(0, 0), self.x2 * self.minor(0, 2))
-            - self
-                .x1
-                .mul_add(self.minor(0, 1), self.x3 * self.minor(0, 3))
+        let c00 = self.minor_00();
+        let c01 = -self.minor_01();
+        let c02 = self.minor_02();
+        let c03 = -self.minor_03();
+
+        self.x0.mul_add(
+            c00,
+            self.x1.mul_add(c01, self.x2.mul_add(c02, self.x3 * c03)),
+        )
     }
 
     pub fn is_invertible(&self) -> bool {
@@ -504,10 +738,10 @@ impl Matrix4 {
             "Attempted to invert a non-invertible matrix."
         );
 
-        let c00 = self.minor(0, 0);
-        let c01 = -self.minor(0, 1);
-        let c02 = self.minor(0, 2);
-        let c03 = -self.minor(0, 3);
+        let c00 = self.minor_00();
+        let c01 = -self.minor_01();
+        let c02 = self.minor_02();
+        let c03 = -self.minor_03();
         let inv_determinant = (self.x0.mul_add(
             c00,
             self.x1.mul_add(c01, self.x2.mul_add(c02, self.x3 * c03)),
@@ -519,18 +753,18 @@ impl Matrix4 {
             y0: c01 * inv_determinant,
             z0: c02 * inv_determinant,
             w0: c03 * inv_determinant,
-            x1: -self.minor(1, 0) * inv_determinant,
-            y1: self.minor(1, 1) * inv_determinant,
-            z1: -self.minor(1, 2) * inv_determinant,
-            w1: self.minor(1, 3) * inv_determinant,
-            x2: self.minor(2, 0) * inv_determinant,
-            y2: -self.minor(2, 1) * inv_determinant,
-            z2: self.minor(2, 2) * inv_determinant,
-            w2: -self.minor(2, 3) * inv_determinant,
-            x3: -self.minor(3, 0) * inv_determinant,
-            y3: self.minor(3, 1) * inv_determinant,
-            z3: -self.minor(3, 2) * inv_determinant,
-            w3: self.minor(3, 3) * inv_determinant,
+            x1: -self.minor_10() * inv_determinant,
+            y1: self.minor_11() * inv_determinant,
+            z1: -self.minor_12() * inv_determinant,
+            w1: self.minor_13() * inv_determinant,
+            x2: self.minor_20() * inv_determinant,
+            y2: -self.minor_21() * inv_determinant,
+            z2: self.minor_22() * inv_determinant,
+            w2: -self.minor_23() * inv_determinant,
+            x3: -self.minor_30() * inv_determinant,
+            y3: self.minor_31() * inv_determinant,
+            z3: -self.minor_32() * inv_determinant,
+            w3: self.minor_33() * inv_determinant,
         }
     }
 }
@@ -990,11 +1224,11 @@ mod tests {
     }
 
     #[bench]
-    fn bench_matrix_cofactor(bencher: &mut Bencher) {
+    fn bench_matrix_minor(bencher: &mut Bencher) {
         let m = matrix4(
             8., 2., 2., 2., 3., -1., 7., 0., 7., 0., 5., 4., 6., -2., 0., 5.,
         );
-        bencher.iter(|| m.cofactor(1, 1));
+        bencher.iter(|| m.minor_11());
     }
 
     #[bench]
@@ -1004,8 +1238,8 @@ mod tests {
     }
 
     #[bench]
-    fn bench_matrix3_cofactor(bencher: &mut Bencher) {
+    fn bench_matrix3_minor(bencher: &mut Bencher) {
         let m = matrix3(1., 2., 6., -5., 8., -4., 2., 6., 4.);
-        bencher.iter(|| m.cofactor(1, 1));
+        bencher.iter(|| m.minor_11());
     }
 }

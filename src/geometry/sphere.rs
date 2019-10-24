@@ -3,23 +3,21 @@ use crate::geometry::*;
 pub fn intersect(ray: Ray) -> Intersections {
     // The vector from the sphere's center, to the ray origin
     // (remember: the sphere is centered at the world origin)
-    let sphere_to_ray = ray.origin - point3(0., 0., 0.);
+    let mut sphere_to_ray = ray.origin;
+    sphere_to_ray.w = 0.;
 
     let a = ray.direction.dot(ray.direction);
-    let b = 2. * ray.direction.dot(sphere_to_ray);
+    let b = ray.direction.dot(sphere_to_ray);
     let c = sphere_to_ray.dot(sphere_to_ray) - 1.;
-
-    let mut discriminant = b * b - 4. * a * c;
-
-    if discriminant.abs() < 1e-3 {
-        discriminant = 0.;
-    }
+    let discriminant = b * b - a * c;
 
     let mut result = Intersections::new();
 
     if discriminant >= 0. {
-        result.push((-b - discriminant.sqrt()) / (2. * a));
-        result.push((-b + discriminant.sqrt()) / (2. * a));
+        let a_recip = a.recip();
+        let d_sqrt = discriminant.sqrt();
+        result.push((-b - d_sqrt) * a_recip);
+        result.push((-b + d_sqrt) * a_recip);
     }
 
     result
@@ -33,6 +31,7 @@ pub fn normal_at(point: Tuple4) -> Tuple4 {
 mod tests {
     use super::*;
     use assert_approx_eq::assert_approx_eq;
+    use test::Bencher;
 
     #[test]
     fn a_ray_intersects_a_sphere_at_two_points() {
@@ -102,5 +101,11 @@ mod tests {
         assert_approx_eq!(n.x, root3over3);
         assert_approx_eq!(n.y, root3over3);
         assert_approx_eq!(n.z, root3over3);
+    }
+
+    #[bench]
+    fn bench_sphere_intersection(bencher: &mut Bencher) {
+        let r = ray(point3(0., 0., 5.), vector3(0., 0., 1.));
+        bencher.iter(|| intersect(r));
     }
 }

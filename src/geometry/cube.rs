@@ -29,29 +29,25 @@ pub fn normal_at(point: Tuple4) -> Tuple4 {
 }
 
 // Cube intersection helper.
+#[inline]
 fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
-    let tmin_numerator = -1. - origin;
-    let tmax_numerator = 1. - origin;
-
-    let (tmin, tmax) = if direction.abs() >= 1e-3 {
-        (tmin_numerator / direction, tmax_numerator / direction)
+    let inv_d = direction.recip();
+    let t0: f32;
+    let t1: f32;
+    if inv_d >= 0. {
+        t0 = (-1. - origin) * inv_d;
+        t1 = (1. - origin) * inv_d;
     } else {
-        (
-            tmin_numerator * std::f32::INFINITY,
-            tmax_numerator * std::f32::INFINITY,
-        )
-    };
-
-    if tmin > tmax {
-        (tmax, tmin)
-    } else {
-        (tmin, tmax)
+        t1 = (-1. - origin) * inv_d;
+        t0 = (1. - origin) * inv_d;
     }
+    (t0, t1)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use test::Bencher;
 
     #[test]
     fn a_ray_intersects_a_cube() {
@@ -107,4 +103,9 @@ mod tests {
         }
     }
 
+    #[bench]
+    fn bench_cube_intersection(bencher: &mut Bencher) {
+        let r = ray(point3(5., 0.5, 0.), vector3(-1., 0., 0.));
+        bencher.iter(|| intersect(r));
+    }
 }

@@ -37,7 +37,12 @@ impl Tuple4 {
 
     /// The distance represented by the tuple.
     pub fn magnitude(&self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
+        (self.x.mul_add(
+            self.x,
+            self.y
+                .mul_add(self.y, self.z.mul_add(self.z, self.w * self.w)),
+        ))
+        .sqrt()
     }
 
     /// Returns a normalized (magnitude = 1.0) form of the tuple.
@@ -70,7 +75,8 @@ impl Tuple4 {
         debug_assert!(self.is_vector());
         debug_assert!(other.is_vector());
 
-        self.x * other.x + self.y * other.y + self.z * other.z
+        self.x
+            .mul_add(other.x, self.y.mul_add(other.y, self.z * other.z))
     }
 
     /// Returns the cross product (aka vector product) with another vector.
@@ -82,9 +88,9 @@ impl Tuple4 {
         debug_assert!(other.is_vector());
 
         Tuple4 {
-            x: self.y * other.z - self.z * other.y,
-            y: self.z * other.x - self.x * other.z,
-            z: self.x * other.y - self.y * other.x,
+            x: self.y.mul_add(other.z, -self.z * other.y),
+            y: self.z.mul_add(other.x, -self.x * other.z),
+            z: self.x.mul_add(other.y, -self.y * other.x),
             w: 0.,
         }
     }

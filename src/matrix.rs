@@ -20,7 +20,7 @@ pub fn matrix2(x0: f32, x1: f32, y0: f32, y1: f32) -> Matrix2 {
 impl Matrix2 {
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x0 * self.y1 - self.x1 * self.y0
+        self.x0.mul_add(self.y1, -self.x1 * self.y0)
     }
 }
 
@@ -137,15 +137,15 @@ impl Matrix3 {
     #[inline]
     pub fn minor(&self, row: usize, column: usize) -> f32 {
         match (row, column) {
-            (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
-            (0, 1) => (self.y0 * self.z2 - self.y2 * self.z0),
-            (0, 2) => (self.y0 * self.z1 - self.y1 * self.z0),
-            (1, 0) => (self.x1 * self.z2 - self.x2 * self.z1),
-            (1, 1) => (self.x0 * self.z2 - self.x2 * self.z0),
-            (1, 2) => (self.x0 * self.z1 - self.x1 * self.z0),
-            (2, 0) => (self.x1 * self.y2 - self.x2 * self.y1),
-            (2, 1) => (self.x0 * self.y2 - self.x2 * self.y0),
-            (2, 2) => (self.x0 * self.y1 - self.x1 * self.y0),
+            (0, 0) => (self.y1.mul_add(self.z2, -self.y2 * self.z1)),
+            (0, 1) => (self.y0.mul_add(self.z2, -self.y2 * self.z0)),
+            (0, 2) => (self.y0.mul_add(self.z1, -self.y1 * self.z0)),
+            (1, 0) => (self.x1.mul_add(self.z2, -self.x2 * self.z1)),
+            (1, 1) => (self.x0.mul_add(self.z2, -self.x2 * self.z0)),
+            (1, 2) => (self.x0.mul_add(self.z1, -self.x1 * self.z0)),
+            (2, 0) => (self.x1.mul_add(self.y2, -self.x2 * self.y1)),
+            (2, 1) => (self.x0.mul_add(self.y2, -self.x2 * self.y0)),
+            (2, 2) => (self.x0.mul_add(self.y1, -self.x1 * self.y0)),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
@@ -153,24 +153,25 @@ impl Matrix3 {
     #[inline]
     pub fn cofactor(&self, row: usize, column: usize) -> f32 {
         match (row, column) {
-            (0, 0) => (self.y1 * self.z2 - self.y2 * self.z1),
-            (0, 1) => -(self.y0 * self.z2 - self.y2 * self.z0),
-            (0, 2) => (self.y0 * self.z1 - self.y1 * self.z0),
-            (1, 0) => -(self.x1 * self.z2 - self.x2 * self.z1),
-            (1, 1) => (self.x0 * self.z2 - self.x2 * self.z0),
-            (1, 2) => -(self.x0 * self.z1 - self.x1 * self.z0),
-            (2, 0) => (self.x1 * self.y2 - self.x2 * self.y1),
-            (2, 1) => -(self.x0 * self.y2 - self.x2 * self.y0),
-            (2, 2) => (self.x0 * self.y1 - self.x1 * self.y0),
+            (0, 0) => (self.y1.mul_add(self.z2, -self.y2 * self.z1)),
+            (0, 1) => -(self.y0.mul_add(self.z2, -self.y2 * self.z0)),
+            (0, 2) => (self.y0.mul_add(self.z1, -self.y1 * self.z0)),
+            (1, 0) => -(self.x1.mul_add(self.z2, -self.x2 * self.z1)),
+            (1, 1) => (self.x0.mul_add(self.z2, -self.x2 * self.z0)),
+            (1, 2) => -(self.x0.mul_add(self.z1, -self.x1 * self.z0)),
+            (2, 0) => (self.x1.mul_add(self.y2, -self.x2 * self.y1)),
+            (2, 1) => -(self.x0.mul_add(self.y2, -self.x2 * self.y0)),
+            (2, 2) => (self.x0.mul_add(self.y1, -self.x1 * self.y0)),
             (_, _) => panic!("Invalid submatrix requested (row and column must be 0, 1, or 2)."),
         }
     }
 
     #[inline]
     pub fn determinant(&self) -> f32 {
-        self.x0 * (self.y1 * self.z2 - self.y2 * self.z1)
-            - self.x1 * (self.y0 * self.z2 - self.y2 * self.z0)
-            + self.x2 * (self.y0 * self.z1 - self.y1 * self.z0)
+        self.x0.mul_add(
+            self.y1.mul_add(self.z2, -self.y2 * self.z1),
+            self.x2 * self.y0.mul_add(self.z1, -self.y1 * self.z0),
+        ) - self.x1 * self.y0.mul_add(self.z2, -self.y2 * self.z0)
     }
 }
 
@@ -486,8 +487,11 @@ impl Matrix4 {
     }
 
     pub fn determinant(&self) -> f32 {
-        self.x0 * self.minor(0, 0) - self.x1 * self.minor(0, 1) + self.x2 * self.minor(0, 2)
-            - self.x3 * self.minor(0, 3)
+        self.x0
+            .mul_add(self.minor(0, 0), self.x2 * self.minor(0, 2))
+            - self
+                .x1
+                .mul_add(self.minor(0, 1), self.x3 * self.minor(0, 3))
     }
 
     pub fn is_invertible(&self) -> bool {
@@ -504,7 +508,11 @@ impl Matrix4 {
         let c01 = -self.minor(0, 1);
         let c02 = self.minor(0, 2);
         let c03 = -self.minor(0, 3);
-        let inv_determinant = 1. / (self.x0 * c00 + self.x1 * c01 + self.x2 * c02 + self.x3 * c03);
+        let inv_determinant = (self.x0.mul_add(
+            c00,
+            self.x1.mul_add(c01, self.x2.mul_add(c02, self.x3 * c03)),
+        ))
+        .recip();
 
         Matrix4 {
             x0: c00 * inv_determinant,
@@ -533,22 +541,86 @@ impl ops::Mul for Matrix4 {
     #[inline]
     fn mul(self, other: Matrix4) -> Matrix4 {
         Matrix4 {
-            x0: self.x0 * other.x0 + self.x1 * other.y0 + self.x2 * other.z0 + self.x3 * other.w0,
-            y0: self.y0 * other.x0 + self.y1 * other.y0 + self.y2 * other.z0 + self.y3 * other.w0,
-            z0: self.z0 * other.x0 + self.z1 * other.y0 + self.z2 * other.z0 + self.z3 * other.w0,
-            w0: self.w0 * other.x0 + self.w1 * other.y0 + self.w2 * other.z0 + self.w3 * other.w0,
-            x1: self.x0 * other.x1 + self.x1 * other.y1 + self.x2 * other.z1 + self.x3 * other.w1,
-            y1: self.y0 * other.x1 + self.y1 * other.y1 + self.y2 * other.z1 + self.y3 * other.w1,
-            z1: self.z0 * other.x1 + self.z1 * other.y1 + self.z2 * other.z1 + self.z3 * other.w1,
-            w1: self.w0 * other.x1 + self.w1 * other.y1 + self.w2 * other.z1 + self.w3 * other.w1,
-            x2: self.x0 * other.x2 + self.x1 * other.y2 + self.x2 * other.z2 + self.x3 * other.w2,
-            y2: self.y0 * other.x2 + self.y1 * other.y2 + self.y2 * other.z2 + self.y3 * other.w2,
-            z2: self.z0 * other.x2 + self.z1 * other.y2 + self.z2 * other.z2 + self.z3 * other.w2,
-            w2: self.w0 * other.x2 + self.w1 * other.y2 + self.w2 * other.z2 + self.w3 * other.w2,
-            x3: self.x0 * other.x3 + self.x1 * other.y3 + self.x2 * other.z3 + self.x3 * other.w3,
-            y3: self.y0 * other.x3 + self.y1 * other.y3 + self.y2 * other.z3 + self.y3 * other.w3,
-            z3: self.z0 * other.x3 + self.z1 * other.y3 + self.z2 * other.z3 + self.z3 * other.w3,
-            w3: self.w0 * other.x3 + self.w1 * other.y3 + self.w2 * other.z3 + self.w3 * other.w3,
+            x0: self.x0.mul_add(
+                other.x0,
+                self.x1
+                    .mul_add(other.y0, self.x2.mul_add(other.z0, self.x3 * other.w0)),
+            ),
+            y0: self.y0.mul_add(
+                other.x0,
+                self.y1
+                    .mul_add(other.y0, self.y2.mul_add(other.z0, self.y3 * other.w0)),
+            ),
+            z0: self.z0.mul_add(
+                other.x0,
+                self.z1
+                    .mul_add(other.y0, self.z2.mul_add(other.z0, self.z3 * other.w0)),
+            ),
+            w0: self.w0.mul_add(
+                other.x0,
+                self.w1
+                    .mul_add(other.y0, self.w2.mul_add(other.z0, self.w3 * other.w0)),
+            ),
+            x1: self.x0.mul_add(
+                other.x1,
+                self.x1
+                    .mul_add(other.y1, self.x2.mul_add(other.z1, self.x3 * other.w1)),
+            ),
+            y1: self.y0.mul_add(
+                other.x1,
+                self.y1
+                    .mul_add(other.y1, self.y2.mul_add(other.z1, self.y3 * other.w1)),
+            ),
+            z1: self.z0.mul_add(
+                other.x1,
+                self.z1
+                    .mul_add(other.y1, self.z2.mul_add(other.z1, self.z3 * other.w1)),
+            ),
+            w1: self.w0.mul_add(
+                other.x1,
+                self.w1
+                    .mul_add(other.y1, self.w2.mul_add(other.z1, self.w3 * other.w1)),
+            ),
+            x2: self.x0.mul_add(
+                other.x2,
+                self.x1
+                    .mul_add(other.y2, self.x2.mul_add(other.z2, self.x3 * other.w2)),
+            ),
+            y2: self.y0.mul_add(
+                other.x2,
+                self.y1
+                    .mul_add(other.y2, self.y2.mul_add(other.z2, self.y3 * other.w2)),
+            ),
+            z2: self.z0.mul_add(
+                other.x2,
+                self.z1
+                    .mul_add(other.y2, self.z2.mul_add(other.z2, self.z3 * other.w2)),
+            ),
+            w2: self.w0.mul_add(
+                other.x2,
+                self.w1
+                    .mul_add(other.y2, self.w2.mul_add(other.z2, self.w3 * other.w2)),
+            ),
+            x3: self.x0.mul_add(
+                other.x3,
+                self.x1
+                    .mul_add(other.y3, self.x2.mul_add(other.z3, self.x3 * other.w3)),
+            ),
+            y3: self.y0.mul_add(
+                other.x3,
+                self.y1
+                    .mul_add(other.y3, self.y2.mul_add(other.z3, self.y3 * other.w3)),
+            ),
+            z3: self.z0.mul_add(
+                other.x3,
+                self.z1
+                    .mul_add(other.y3, self.z2.mul_add(other.z3, self.z3 * other.w3)),
+            ),
+            w3: self.w0.mul_add(
+                other.x3,
+                self.w1
+                    .mul_add(other.y3, self.w2.mul_add(other.z3, self.w3 * other.w3)),
+            ),
         }
     }
 }
@@ -559,10 +631,26 @@ impl ops::Mul<Tuple4> for Matrix4 {
     #[inline]
     fn mul(self, other: Tuple4) -> Tuple4 {
         Tuple4 {
-            x: self.x0 * other.x + self.x1 * other.y + self.x2 * other.z + self.x3 * other.w,
-            y: self.y0 * other.x + self.y1 * other.y + self.y2 * other.z + self.y3 * other.w,
-            z: self.z0 * other.x + self.z1 * other.y + self.z2 * other.z + self.z3 * other.w,
-            w: self.w0 * other.x + self.w1 * other.y + self.w2 * other.z + self.w3 * other.w,
+            x: self.x0.mul_add(
+                other.x,
+                self.x1
+                    .mul_add(other.y, self.x2.mul_add(other.z, self.x3 * other.w)),
+            ),
+            y: self.y0.mul_add(
+                other.x,
+                self.y1
+                    .mul_add(other.y, self.y2.mul_add(other.z, self.y3 * other.w)),
+            ),
+            z: self.z0.mul_add(
+                other.x,
+                self.z1
+                    .mul_add(other.y, self.z2.mul_add(other.z, self.z3 * other.w)),
+            ),
+            w: self.w0.mul_add(
+                other.x,
+                self.w1
+                    .mul_add(other.y, self.w2.mul_add(other.z, self.w3 * other.w)),
+            ),
         }
     }
 }

@@ -741,29 +741,28 @@ impl Matrix4 {
         let c01 = -self.minor_01();
         let c02 = self.minor_02();
         let c03 = -self.minor_03();
-        let inv_determinant = (self.x0.mul_add(
+        let det = self.x0.mul_add(
             c00,
             self.x1.mul_add(c01, self.x2.mul_add(c02, self.x3 * c03)),
-        ))
-        .recip();
+        );
 
         Matrix4 {
-            x0: c00 * inv_determinant,
-            y0: c01 * inv_determinant,
-            z0: c02 * inv_determinant,
-            w0: c03 * inv_determinant,
-            x1: -self.minor_10() * inv_determinant,
-            y1: self.minor_11() * inv_determinant,
-            z1: -self.minor_12() * inv_determinant,
-            w1: self.minor_13() * inv_determinant,
-            x2: self.minor_20() * inv_determinant,
-            y2: -self.minor_21() * inv_determinant,
-            z2: self.minor_22() * inv_determinant,
-            w2: -self.minor_23() * inv_determinant,
-            x3: -self.minor_30() * inv_determinant,
-            y3: self.minor_31() * inv_determinant,
-            z3: -self.minor_32() * inv_determinant,
-            w3: self.minor_33() * inv_determinant,
+            x0: c00 / det,
+            y0: c01 / det,
+            z0: c02 / det,
+            w0: c03 / det,
+            x1: -self.minor_10() / det,
+            y1: self.minor_11() / det,
+            z1: -self.minor_12() / det,
+            w1: self.minor_13() / det,
+            x2: self.minor_20() / det,
+            y2: -self.minor_21() / det,
+            z2: self.minor_22() / det,
+            w2: -self.minor_23() / det,
+            x3: -self.minor_30() / det,
+            y3: self.minor_31() / det,
+            z3: -self.minor_32() / det,
+            w3: self.minor_33() / det,
         }
     }
 }

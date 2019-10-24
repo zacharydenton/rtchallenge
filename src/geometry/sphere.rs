@@ -14,10 +14,9 @@ pub fn intersect(ray: Ray) -> Intersections {
     let mut result = Intersections::new();
 
     if discriminant >= 0. {
-        let inv_a = a.recip();
         let d_sqrt = discriminant.sqrt();
-        result.push((-b - d_sqrt) * inv_a);
-        result.push((-b + d_sqrt) * inv_a);
+        result.push((-b - d_sqrt) / a);
+        result.push((-b + d_sqrt) / a);
     }
 
     result

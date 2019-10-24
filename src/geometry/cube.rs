@@ -31,15 +31,14 @@ pub fn normal_at(point: Tuple4) -> Tuple4 {
 // Cube intersection helper.
 #[inline]
 fn check_axis(origin: f32, direction: f32) -> (f32, f32) {
-    let inv_d = direction.recip();
     let t0: f32;
     let t1: f32;
-    if inv_d >= 0. {
-        t0 = (-1. - origin) * inv_d;
-        t1 = (1. - origin) * inv_d;
+    if direction >= 0. {
+        t0 = (-1. - origin) / direction;
+        t1 = (1. - origin) / direction;
     } else {
-        t1 = (-1. - origin) * inv_d;
-        t0 = (1. - origin) * inv_d;
+        t1 = (-1. - origin) / direction;
+        t0 = (1. - origin) / direction;
     }
     (t0, t1)
 }

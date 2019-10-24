@@ -32,10 +32,9 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
         }
 
         let (tmin, tmax) = {
-            let inv_a = a.recip();
             let d_sqrt = discriminant.sqrt();
-            let t0 = (-b - d_sqrt) * inv_a;
-            let t1 = (-b + d_sqrt) * inv_a;
+            let t0 = (-b - d_sqrt) / a;
+            let t1 = (-b + d_sqrt) / a;
             if t0 < t1 {
                 (t0, t1)
             } else {
@@ -93,15 +92,14 @@ fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f32, max: f32, closed: 
 
     // Check for an intersection with the lower end cap by intersecting the ray
     // with the plane at y = min.
-    let inv_y = ray.direction.y.recip();
-    let tmin = (min - ray.origin.y) * inv_y;
+    let tmin = (min - ray.origin.y) / ray.direction.y;
     if check_cap(ray, tmin) {
         xs.push(tmin);
     }
 
     // Check for an intersection with the upper end cap by intersectin the ray
     // with the plane y = max.
-    let tmax = (max - ray.origin.y) * inv_y;
+    let tmax = (max - ray.origin.y) / ray.direction.y;
     if check_cap(ray, tmax) {
         xs.push(tmax);
     }

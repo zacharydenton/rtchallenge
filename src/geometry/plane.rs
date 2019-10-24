@@ -3,7 +3,7 @@ use crate::geometry::*;
 pub fn intersect(ray: Ray) -> Intersections {
     let mut result = Intersections::new();
 
-    if ray.direction.y.abs() > 0. {
+    if ray.direction.y.abs() > 1e-5 {
         result.push(-ray.origin.y / ray.direction.y);
     }
 

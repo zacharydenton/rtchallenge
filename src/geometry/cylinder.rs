@@ -3,16 +3,26 @@ use crate::geometry::*;
 pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
     let mut result = Intersections::new();
 
-    let a = (ray.direction.x * ray.direction.x) + (ray.direction.z * ray.direction.z);
+    let a = ray
+        .direction
+        .x
+        .mul_add(ray.direction.x, ray.direction.z * ray.direction.z);
 
-    if a.abs() > 1e-3 {
+    if a.abs() >= 1e-5 {
         // Ray is not parallel to the y-axis.
 
-        let b = 2. * ray.origin.x * ray.direction.x + 2. * ray.origin.z * ray.direction.z;
-        let c = (ray.origin.x * ray.origin.x) + (ray.origin.z * ray.origin.z) - 1.;
-        let mut discriminant = b * b - 4. * a * c;
+        let b = ray
+            .origin
+            .x
+            .mul_add(ray.direction.x, ray.origin.z * ray.direction.z);
+        let c = ray
+            .origin
+            .x
+            .mul_add(ray.origin.x, ray.origin.z.mul_add(ray.origin.z, -1.));
 
-        if discriminant.abs() < 1e-3 {
+        let mut discriminant = b.mul_add(b, -a * c);
+
+        if discriminant.abs() < 1e-5 {
             discriminant = 0.;
         }
 
@@ -22,8 +32,10 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
         }
 
         let (tmin, tmax) = {
-            let t0 = (-b - discriminant.sqrt()) / (2. * a);
-            let t1 = (-b + discriminant.sqrt()) / (2. * a);
+            let inv_a = a.recip();
+            let d_sqrt = discriminant.sqrt();
+            let t0 = (-b - d_sqrt) * inv_a;
+            let t1 = (-b + d_sqrt) * inv_a;
             if t0 < t1 {
                 (t0, t1)
             } else {
@@ -31,12 +43,13 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
             }
         };
 
-        let ymin = ray.origin.y + tmin * ray.direction.y;
+        let ymin = ray.direction.y.mul_add(tmin, ray.origin.y);
+        let ymax = ray.direction.y.mul_add(tmax, ray.origin.y);
+
         if min < ymin && ymin < max {
             result.push(tmin);
         }
 
-        let ymax = ray.origin.y + tmax * ray.direction.y;
         if min < ymax && ymax < max {
             result.push(tmax);
         }
@@ -49,12 +62,12 @@ pub fn intersect(ray: Ray, min: f32, max: f32, closed: bool) -> Intersections {
 
 pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
     // The square of the distance from the y axis.
-    let d2 = point.x * point.x + point.z * point.z;
+    let d2 = point.x.mul_add(point.x, point.z * point.z);
 
-    if d2 < 1. && point.y >= max - 1e-3 {
+    if d2 < 1. && point.y >= max - 1e-5 {
         // Hitting the top cap.
         vector3(0., 1., 0.)
-    } else if d2 < 1. && point.y <= min + 1e-3 {
+    } else if d2 < 1. && point.y <= min + 1e-5 {
         // Hitting the bottom cap.
         vector3(0., -1., 0.)
     } else {
@@ -64,15 +77,15 @@ pub fn normal_at(point: Tuple4, min: f32, max: f32, _closed: bool) -> Tuple4 {
 
 // Helper to reduce duplication in capped cylinder intersection.
 fn check_cap(ray: Ray, t: f32) -> bool {
-    let x = ray.origin.x + t * ray.direction.x;
-    let z = ray.origin.z + t * ray.direction.z;
+    let x = ray.direction.x.mul_add(t, ray.origin.x);
+    let z = ray.direction.z.mul_add(t, ray.origin.z);
 
-    x * x + z * z <= 1. + 1e-3
+    x.mul_add(x, z * z) <= 1. + 1e-5
 }
 
 // Helper which adds capped cylinder intersections.
 fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f32, max: f32, closed: bool) {
-    if !closed || ray.direction.y.abs() < 1e-3 {
+    if !closed || ray.direction.y.abs() < 1e-5 {
         // Caps only matter if the cylinder is closed, and might possibly be intersected
         // by the ray.
         return;
@@ -80,14 +93,15 @@ fn intersect_caps(ray: Ray, xs: &mut Intersections, min: f32, max: f32, closed: 
 
     // Check for an intersection with the lower end cap by intersecting the ray
     // with the plane at y = min.
-    let tmin = (min - ray.origin.y) / ray.direction.y;
+    let inv_y = ray.direction.y.recip();
+    let tmin = (min - ray.origin.y) * inv_y;
     if check_cap(ray, tmin) {
         xs.push(tmin);
     }
 
     // Check for an intersection with the upper end cap by intersectin the ray
     // with the plane y = max.
-    let tmax = (max - ray.origin.y) / ray.direction.y;
+    let tmax = (max - ray.origin.y) * inv_y;
     if check_cap(ray, tmax) {
         xs.push(tmax);
     }

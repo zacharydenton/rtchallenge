@@ -9,15 +9,15 @@ pub fn intersect(ray: Ray) -> Intersections {
     let a = ray.direction.dot(ray.direction);
     let b = ray.direction.dot(sphere_to_ray);
     let c = sphere_to_ray.dot(sphere_to_ray) - 1.;
-    let discriminant = b * b - a * c;
+    let discriminant = b.mul_add(b, -a * c);
 
     let mut result = Intersections::new();
 
     if discriminant >= 0. {
-        let a_recip = a.recip();
+        let inv_a = a.recip();
         let d_sqrt = discriminant.sqrt();
-        result.push((-b - d_sqrt) * a_recip);
-        result.push((-b + d_sqrt) * a_recip);
+        result.push((-b - d_sqrt) * inv_a);
+        result.push((-b + d_sqrt) * inv_a);
     }
 
     result

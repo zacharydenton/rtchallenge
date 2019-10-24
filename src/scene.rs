@@ -53,8 +53,8 @@ impl Scene {
             let world_normal = world_normal_at(transform, geometry, world_point, eye_vector);
 
             // Compute surface color.
-            let over_point = world_point + world_normal * 1e-3;
-            let under_point = world_point - world_normal * 1e-3;
+            let over_point = world_point + world_normal * 1e-5;
+            let under_point = world_point - world_normal * 1e-5;
             let surface_color = self.lights.iter().fold(Color::BLACK, |acc, &light| {
                 let in_shadow = self.is_shadowed(over_point, light);
                 acc + material.lighting(

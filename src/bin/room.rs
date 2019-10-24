@@ -34,7 +34,7 @@ fn main() {
                     .texture(floor_texture)
                     .diffuse(0.4)
                     .specular(0.8)
-                    .shininess(30.)
+                    .shininess(30)
                     .reflective(0.2),
             ),
     );
@@ -52,7 +52,7 @@ fn main() {
                     .texture(walls_texture)
                     .diffuse(0.3)
                     .specular(0.3)
-                    .shininess(100.)
+                    .shininess(100)
                     .reflective(0.1),
             ),
     );
@@ -64,7 +64,7 @@ fn main() {
         .texture(table_texture)
         .diffuse(0.3)
         .specular(0.3)
-        .shininess(100.)
+        .shininess(100)
         .reflective(0.02);
     scene.add_object(
         Object::new()

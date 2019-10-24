@@ -119,7 +119,7 @@ fn main() {
                     .diffuse(0.2)
                     .ambient(0.0)
                     .specular(1.0)
-                    .shininess(200.)
+                    .shininess(200)
                     .reflective(0.7)
                     .transparency(0.7)
                     .refractive_index(1.5),

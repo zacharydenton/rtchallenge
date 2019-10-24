@@ -101,9 +101,14 @@ impl Texture {
         object_transform: Transform,
         world_point: Tuple4,
     ) -> Color {
-        let object_point = object_transform.world_to_local * world_point;
-        let texture_point = self.transform.world_to_local * object_point;
-        self.evaluate_local(rng, texture_point)
+        if let TextureSpec::Constant(color) = self.spec {
+            // Skip transformations if the texture is constant everywhere.
+            color
+        } else {
+            let object_point = object_transform.world_to_local * world_point;
+            let texture_point = self.transform.world_to_local * object_point;
+            self.evaluate_local(rng, texture_point)
+        }
     }
 
     /// Returns the color at the given point in texture space.
@@ -130,6 +135,7 @@ mod tests {
     use assert_approx_eq::assert_approx_eq;
     use rand::rngs::SmallRng;
     use rand::SeedableRng;
+    use test::Bencher;
 
     #[test]
     fn creating_a_stripe_texture() {
@@ -215,5 +221,25 @@ mod tests {
         assert_approx_eq!(c.r, 0.75);
         assert_approx_eq!(c.g, 0.5);
         assert_approx_eq!(c.b, 0.25);
+    }
+
+    #[bench]
+    fn bench_evaluate_constant_texture(bencher: &mut Bencher) {
+        let mut rng = SmallRng::seed_from_u64(0);
+        let texture = Texture::constant(Color::WHITE);
+        let transform = Transform::new().scale(2., 2., 2.);
+        let point = point3(2.5, 0., 0.);
+
+        bencher.iter(|| texture.evaluate(&mut rng, transform, point));
+    }
+
+    #[bench]
+    fn bench_evaluate_stripe_texture(bencher: &mut Bencher) {
+        let mut rng = SmallRng::seed_from_u64(0);
+        let texture = Texture::stripe(Color::WHITE, Color::BLACK);
+        let transform = Transform::new().scale(2., 2., 2.);
+        let point = point3(2.5, 0., 0.);
+
+        bencher.iter(|| texture.evaluate(&mut rng, transform, point));
     }
 }

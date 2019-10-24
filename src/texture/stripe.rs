@@ -1,7 +1,7 @@
 use crate::texture::*;
 
 pub fn evaluate<T>(point: Tuple4, a: T, b: T) -> T {
-    if point.x.floor() as i32 % 2 == 0 {
+    if point.x.floor() % 2. == 0. {
         a
     } else {
         b

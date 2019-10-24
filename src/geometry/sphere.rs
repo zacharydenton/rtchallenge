@@ -24,7 +24,9 @@ pub fn intersect(ray: Ray) -> Intersections {
 }
 
 pub fn normal_at(point: Tuple4) -> Tuple4 {
-    point - point3(0., 0., 0.)
+    let mut sphere_to_point = point;
+    sphere_to_point.w = 0.;
+    sphere_to_point
 }
 
 #[cfg(test)]

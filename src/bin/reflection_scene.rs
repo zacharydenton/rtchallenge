@@ -69,7 +69,7 @@ fn main() {
                     .color(Color::new(0.5, 0.5, 0.5))
                     .diffuse(0.3)
                     .specular(1.0)
-                    .shininess(400.)
+                    .shininess(400)
                     .reflective(0.9)
                     .transparency(0.9)
                     .refractive_index(1.5),
@@ -106,7 +106,7 @@ fn main() {
                     .color(Color::new(0.5, 0., 0.))
                     .ambient(0.7)
                     .diffuse(0.9)
-                    .shininess(300.)
+                    .shininess(300)
                     .specular(0.9)
                     .reflective(1.0)
                     .transparency(0.05)

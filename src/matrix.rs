@@ -257,8 +257,7 @@ impl Matrix3 {
     pub fn determinant(&self) -> f32 {
         self.x0.mul_add(
             self.minor_00(),
-            self.x1
-                .mul_add(-self.minor_01(), self.x2 * self.minor_02()),
+            self.x1.mul_add(-self.minor_01(), self.x2 * self.minor_02()),
         )
     }
 }

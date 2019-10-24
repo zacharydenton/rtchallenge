@@ -29,14 +29,14 @@ fn main() {
 
     scene.add_object(
         Object::new()
-            .geometry(Geometry::sphere())
+            .geometry(Geometry::cube())
             .transform(Transform::new().scale(10., 0.01, 10.))
             .material(floor_material),
     );
 
     scene.add_object(
         Object::new()
-            .geometry(Geometry::sphere())
+            .geometry(Geometry::cube())
             .transform(
                 Transform::new()
                     .translate(0., 0., 5.)
@@ -49,7 +49,7 @@ fn main() {
 
     scene.add_object(
         Object::new()
-            .geometry(Geometry::sphere())
+            .geometry(Geometry::cube())
             .transform(
                 Transform::new()
                     .translate(0., 0., 5.)

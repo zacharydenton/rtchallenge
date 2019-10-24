@@ -1,9 +1,8 @@
 use crate::texture::*;
 
 pub fn evaluate<T>(point: Tuple4, a: T, b: T) -> T {
-    let c = point.x.floor() + point.z.floor();
-    let f = (c * 0.5).fract();
-    if f.abs() < 1e-3 {
+    let c = (point.x + 1e-5).floor().abs() + (point.z + 1e-5).floor().abs();
+    if c % 2. == 0. {
         a
     } else {
         b

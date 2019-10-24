@@ -22,8 +22,8 @@ fn main() {
     let mut scene = Scene::new();
     scene.add_light(Light::new(point3(-0.5, 2.7, -1.3), Color::new(1., 1., 1.)));
 
-    let mut floor_texture = Texture::white_noise();
-    floor_texture.transform = Transform::new().scale(2., 2., 2.);
+    let mut floor_texture = Texture::checkerboard_2d(Color::WHITE, Color::BLACK);
+    floor_texture.transform = Transform::new().scale(0.2, 0.2, 0.2);
     scene.add_object(
         Object::new()
             .geometry(Geometry::plane())
@@ -139,7 +139,7 @@ fn main() {
             ),
     );
 
-    let mut left_texture = Texture::stripe(Color::new(1., 0., 0.), Color::new(0.7, 0.8, 0.9));
+    let mut left_texture = Texture::white_noise();
     left_texture.transform = Transform::new()
         .scale(0.2, 1., 1.)
         .rotate_y(std::f32::consts::FRAC_PI_4);

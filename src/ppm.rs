@@ -103,6 +103,6 @@ mod tests {
     fn ppm_files_are_terminated_by_a_newline() {
         let c = Canvas::new(5, 3);
         let ppm = canvas_to_ppm(c);
-        assert!(ppm.ends_with("\n"));
+        assert!(ppm.ends_with('\n'));
     }
 }

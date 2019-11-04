@@ -87,7 +87,7 @@ impl Scene {
             let refract_color = if material.transparency > 0. && remaining > 0 {
                 let n_ratio = n1 / n2;
                 let cos_i = eye_vector.dot(world_normal);
-                let sin2_t = n_ratio * n_ratio *  (1. - cos_i * cos_i);
+                let sin2_t = n_ratio * n_ratio * (1. - cos_i * cos_i);
 
                 if sin2_t > 1. {
                     // Total internal reflection.
@@ -163,7 +163,7 @@ impl Scene {
 
         for i in all_intersections {
             if i == intersection {
-                if containers.len() == 0 {
+                if containers.is_empty() {
                     n1 = 1.0;
                 } else {
                     n1 = self.materials[*containers.last().unwrap()].refractive_index;
@@ -177,7 +177,7 @@ impl Scene {
             }
 
             if i == intersection {
-                if containers.len() == 0 {
+                if containers.is_empty() {
                     n2 = 1.0;
                 } else {
                     n2 = self.materials[*containers.last().unwrap()].refractive_index;
@@ -511,12 +511,12 @@ mod tests {
 
         let lower = Object::new()
             .material(Material::new().reflective(1.))
-            .transform(Transform::new().translate(0., -1., 0.));;
+            .transform(Transform::new().translate(0., -1., 0.));
         scene.add_object(lower);
 
         let upper = Object::new()
             .material(Material::new().reflective(1.))
-            .transform(Transform::new().translate(0., 1., 0.));;
+            .transform(Transform::new().translate(0., 1., 0.));
         scene.add_object(upper);
 
         let r = ray(point3(0., 0., 0.), vector3(0., 1., 0.));
@@ -695,7 +695,7 @@ mod tests {
     fn the_normal_is_a_normalized_vector() {
         let transform = Transform::new();
         let geometry = Geometry::sphere();
-        let root3over3 = (3 as f32).sqrt() / 3.;
+        let root3over3 = 3_f32.sqrt() / 3.;
         let world_point = point3(root3over3, root3over3, root3over3);
         let eye_vector = world_point - point3(0., 0., 0.);
         let n = world_normal_at(transform, geometry, world_point, eye_vector);

@@ -125,5 +125,4 @@ mod tests {
             panic!();
         }
     }
-
 }

@@ -267,8 +267,8 @@ mod tests {
         assert_eq!(vector3(1., 0., 0.).magnitude(), 1.);
         assert_eq!(vector3(0., 1., 0.).magnitude(), 1.);
         assert_eq!(vector3(0., 0., 1.).magnitude(), 1.);
-        assert_eq!(vector3(1., 2., 3.).magnitude(), (14 as f32).sqrt());
-        assert_eq!(vector3(-1., -2., -3.).magnitude(), (14 as f32).sqrt());
+        assert_eq!(vector3(1., 2., 3.).magnitude(), 14_f32.sqrt());
+        assert_eq!(vector3(-1., -2., -3.).magnitude(), 14_f32.sqrt());
     }
 
     #[test]
@@ -276,11 +276,7 @@ mod tests {
         assert_eq!(vector3(4., 0., 0.).normalize(), vector3(1., 0., 0.));
         assert_eq!(
             vector3(1., 2., 3.).normalize(),
-            vector3(
-                1. / (14 as f32).sqrt(),
-                2. / (14 as f32).sqrt(),
-                3. / (14 as f32).sqrt(),
-            )
+            vector3(1. / 14_f32.sqrt(), 2. / 14_f32.sqrt(), 3. / 14_f32.sqrt(),)
         );
     }
 

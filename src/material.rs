@@ -327,17 +327,7 @@ mod tests {
         let light = Light::new(point3(0., 0., -10.), Color::new(1., 1., 1.));
         let transform = Transform::new();
 
-        bencher.iter(|| {
-            m.lighting(
-                &mut rng,
-                transform,
-                light,
-                position,
-                eyev,
-                normalv,
-                true,
-            )
-        });
+        bencher.iter(|| m.lighting(&mut rng, transform, light, position, eyev, normalv, true));
     }
 
     #[bench]
@@ -350,16 +340,6 @@ mod tests {
         let light = Light::new(point3(0., 10., -10.), Color::new(1., 1., 1.));
         let transform = Transform::new();
 
-        bencher.iter(|| {
-            m.lighting(
-                &mut rng,
-                transform,
-                light,
-                position,
-                eyev,
-                normalv,
-                false,
-            )
-        });
+        bencher.iter(|| m.lighting(&mut rng, transform, light, position, eyev, normalv, false));
     }
 }

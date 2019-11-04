@@ -21,9 +21,9 @@ mod tests {
         let c = evaluate(&mut rng, green);
         let d = evaluate(&mut rng, green);
 
-        assert_eq!(a, Color::new(0., 0.25192142, 0.));
-        assert_eq!(b, Color::new(0., 0.9136063, 0.));
-        assert_eq!(c, Color::new(0., 0.43447804, 0.));
-        assert_eq!(d, Color::new(0., 0.09251958, 0.));
+        assert_eq!(a, Color::new(0., 0.251_921_42, 0.));
+        assert_eq!(b, Color::new(0., 0.913_606_3, 0.));
+        assert_eq!(c, Color::new(0., 0.434_478_04, 0.));
+        assert_eq!(d, Color::new(0., 0.092_519_58, 0.));
     }
 }
